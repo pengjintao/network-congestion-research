@@ -283,20 +283,26 @@ def main(argv):
             # Connect client to nearest N routers.
             #
             #
+            Iph_temp =random.randint(minClientLinks,
+                                              maxClientLinks) 
+            #nearest = nearestN(routersDict, -1,
+            #                   xCoord, yCoord,
+            #                   Iph_temp)
+            Iph_u =int(routers/6)
             nearest = nearestN(routersDict, -1,
                                xCoord, yCoord,
-                               random.randint(minClientLinks,
-                                              maxClientLinks))
-            for i in range(0, len(nearest)):
-                t = random.randint(0, len(nearest[i])-1)
+                               Iph_u)
+            #print(len(nearest))
+            for i in range(0, Iph_temp):
+                t = random.randint(0, len(nearest)-1)
                 topology["connections"].append({
                     "source_id": "node" + str(c),
                     "source_interface": "interface1",
-                    "destination_id": "node" + str(nearest[i][0]),
+                    "destination_id": "node" + str(nearest[t][0]),
                     "destination_interface": "interface1",
                     "channel_id": "channel" + str(random.randint(
                         1, channels))})
-                connections.append([nearest[i][0], c])
+                connections.append([nearest[t][0], c])
 
         # Add servers outside routers area.
         for p in range(p_startindex, p_endindex + 1):
@@ -322,19 +328,23 @@ def main(argv):
             nodes[p] = [xCoord, yCoord, "server"]
 
             # Connect server to nearest N routers.
+            Iph_temp = random.randint(minServerLinks,
+                                              maxServerLinks)
+                                              
+            Iph_u =int(routers/6)
             nearest = nearestN(routersDict, -1,
                                xCoord, yCoord,
-                               random.randint(minServerLinks,
-                                              maxServerLinks))
-            for i in range(0, len(nearest)):
+                               Iph_u)
+            for i in range(0, Iph_temp):
+                t = random.randint(0, len(nearest)-1)
                 topology["connections"].append({
-                    "source_id": "node" + str(nearest[i][0]),
+                    "source_id": "node" + str(nearest[t][0]),
                     "source_interface": "interface1",
                     "destination_id": "node" + str(p),
                     "destination_interface": "interface1",
                     "channel_id": "channel" + str(random.randint(
                         1, channels))})
-                connections.append([nearest[i][0], p])
+                connections.append([nearest[t][0], p])
 
         # Verify that the graph has a single component.
         if not isConnected(nodes, connections):
