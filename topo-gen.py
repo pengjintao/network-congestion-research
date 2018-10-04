@@ -220,6 +220,7 @@ def main(argv):
             for i in range(0, len(nearest)):
                 tmp = str(r) + "-" + str(nearest[i][0])
                 if tmp not in routersConnections:
+                    t = random.randint(0,3)
                     topology["connections"].append({
                         "source_id": "node" + str(r),
                         "source_interface": "interface1",
@@ -280,19 +281,22 @@ def main(argv):
             nodes[c] = [xCoord, yCoord, "client"]
 
             # Connect client to nearest N routers.
+            #random.randint(minClientLinks,
+            #                                  maxClientLinks)
+            #
             nearest = nearestN(routersDict, -1,
                                xCoord, yCoord,
-                               random.randint(minClientLinks,
-                                              maxClientLinks))
+                               4)
             for i in range(0, len(nearest)):
+                t = random.randint(0, 4)
                 topology["connections"].append({
                     "source_id": "node" + str(c),
                     "source_interface": "interface1",
-                    "destination_id": "node" + str(nearest[i][0]),
+                    "destination_id": "node" + str(nearest[i][4]),
                     "destination_interface": "interface1",
                     "channel_id": "channel" + str(random.randint(
                         1, channels))})
-                connections.append([nearest[i][0], c])
+                connections.append([nearest[i][4], c])
 
         # Add servers outside routers area.
         for p in range(p_startindex, p_endindex + 1):
