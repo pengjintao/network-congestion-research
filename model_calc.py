@@ -41,7 +41,7 @@ class Graph:
 			count += 1;
 			self.NodeMap[x["node_id"]] = temp
 
-		count = 0 
+		count = 0
 		for x in Input["Router"]:
 			temp = Node()
 			temp.label = x["node_id"]
@@ -60,7 +60,7 @@ class Graph:
 			temp.End = self.NodeMap[x["destination_id"]]
 			temp.End.InEdges.append(temp)
 			if temp.Start.type == 0:
-				print("temp.start.type = InNode"); 
+				print("temp.start.type = InNode");
 				temp.EdgeType = 0
 			if temp.End.type == 2:
 				print("temp.start.type = OutNode");
@@ -97,7 +97,7 @@ class Graph:
 				self.FindShortestPath(Ipt,Opt);
 	def FindShortestPath(self,SendNode,RecvNode):
 		S = set()
-		#print("find shortest path");  
+		#print("find shortest path");
 		Q = queue.Queue();
 		for x in SendNode.OutEdges:
 			S.add(x)
@@ -122,6 +122,21 @@ class Graph:
 		for x in self.MsgRout[SendNode.Iph_I][RecvNode.Iph_I]:
 			print(x.label,end = ' ')
 		print(' ')
+	def PrintGraphMessage(self):
+		for x in self.InNode:
+			if x.Msgs.nextMsg != None:
+				p = MsgChan()
+				p.nextMsg = x.Msgs.nextMsg
+				#print(type(p.nextMsg.msg.start))
+				print("%s %d"%(p.nextMsg.msg.start.label + p.nextMsg.msg.end.label,p.nextMsg.msg.size))
+				p.nextMsg = p.nextMsg.nextMsg
+				while p.nextMsg != x.Msgs.nextMsg:
+					print("%s %d"%(p.nextMsg.msg.start.label + p.nextMsg.msg.end.label,p.nextMsg.msg.size))
+					p.nextMsg = p.nextMsg.nextMsg
+		
+
+
+
 
 class Edge:
 	def __init__(self):
@@ -144,7 +159,7 @@ class Node:
 		self.type = None  #check
 		self.InEdges = [] #check
 		self.OutEdges = [] #checks
-		self.Iph_I = int() 
+		self.Iph_I = int()
 		self.prev = None  #prev is used for shortest path generator
 		self.Msgs = MsgChan()
 class MsgChan:
@@ -155,7 +170,7 @@ class MsgChan:
 	def insert(self,msg):
 		temp = MsgChan();
 		temp.msg = msg;
-		if self.nextMsg == None: 
+		if self.nextMsg == None:
 			self.nextMsg = temp
 			temp.nextMsg = temp;
 			temp.prevMsg = temp;
@@ -204,12 +219,13 @@ def Init_random_Msgs(G,n):
 		size = random.randint(1,1000)
 		if (A.label + B.label) in Msg_Dicts:
 			Msg_Dicts[A.label + B.label]["Msg"].size += size
-			#print("hit")		
+			#print("hit")
 		else:
 			temp = Msg()
 			temp.size = size
 			temp.start = G.NodeMap[A.label]
 			temp.end = G.NodeMap[B.label]
+			#print(G.NodeMap[B.label])
 			Msg_Dicts[A.label + B.label]= {}
 			Msg_Dicts[A.label + B.label]["Msg"] = temp
 			Msg_Dicts[A.label + B.label]["start"] = A
@@ -224,16 +240,23 @@ def add_msg_to_Node(MsgD,G):
 		while x.Msgs.nextMsg != None:
 			x.Msgs.delete_first()
 	for x,data in MsgD.items():
-		data["start"].Msgs.insert(x)
-
+		data["start"].Msgs.insert(data["Msg"])
+		#print(type(data["Msg"].start))
 
 def main(argv):
 	print("calculation start")
 	configFile = "test_1.json"
 	#图的初始化
 	G = Graph(configFile)
+    #生成40条随机消息
 	MsgD = Init_random_Msgs(G,40)
 	print_Msg_Diects(MsgD)
+	print("")
+    #将随机生成的消息初始化进G中
+	#add_msg_to_Node(MsgD,G)
+	#G.PrintGraphMessage()
+	add_msg_to_Node(MsgD,G)
+	G.PrintGraphMessage()
 	#print(Msg_Dicts)
 	a = [4,5,4,6]
 
