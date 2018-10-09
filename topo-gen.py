@@ -193,11 +193,11 @@ def main(argv):
         routersDict = {}
         routersConnections = []
         for r in range(r_startindex, r_endindex + 1):
-            xCoord = round(random.uniform(0 + 0.1 * maxXCoord, 
-                                          maxXCoord - 0.1 * maxYCoord), 
+            xCoord = round(random.uniform(0 + 0.1 * maxXCoord,
+                                          maxXCoord - 0.1 * maxYCoord),
                            2)
-            yCoord = round(random.uniform(0 + 0.1 * maxYCoord, 
-                                          maxYCoord - 0.1 * maxYCoord), 
+            yCoord = round(random.uniform(0 + 0.1 * maxYCoord,
+                                          maxYCoord - 0.1 * maxYCoord),
                            2)
             temp = {
                 "node_id": "node" + str(r),
@@ -212,7 +212,7 @@ def main(argv):
 
         # Connect each routers to nearest N neighboring routers.
         for r in range(r_startindex, r_endindex + 1):
-            nearest = nearestN(routersDict, r, 
+            nearest = nearestN(routersDict, r,
                                routersDict[r][0],
                                routersDict[r][1],
                                random.randint(minRouterLinks,
@@ -260,10 +260,10 @@ def main(argv):
         # Add clients outside routers area.
         for c in range(c_startindex, c_endindex + 1):
             xCoord = round(random.uniform(0,
-                                          routerMinX + maxXCoord - 
+                                          routerMinX + maxXCoord -
                                           routerMaxX), 2)
             yCoord = round(random.uniform(0,
-                                          routerMinY + maxYCoord - 
+                                          routerMinY + maxYCoord -
                                           routerMaxY), 2)
             if xCoord > routerMinX:
                 xCoord = xCoord + routersAreaX
@@ -284,7 +284,7 @@ def main(argv):
             #
             #
             Iph_temp =random.randint(minClientLinks,
-                                              maxClientLinks) 
+                                              maxClientLinks)
             #nearest = nearestN(routersDict, -1,
             #                   xCoord, yCoord,
             #                   Iph_temp)
@@ -307,10 +307,10 @@ def main(argv):
         # Add servers outside routers area.
         for p in range(p_startindex, p_endindex + 1):
             xCoord = round(random.uniform(0,
-                                          routerMinX + maxXCoord - 
+                                          routerMinX + maxXCoord -
                                           routerMaxX), 2)
             yCoord = round(random.uniform(0,
-                                          routerMinY + maxYCoord - 
+                                          routerMinY + maxYCoord -
                                           routerMaxY), 2)
             if xCoord > routerMinX:
                 xCoord = xCoord + routersAreaX
@@ -330,7 +330,7 @@ def main(argv):
             # Connect server to nearest N routers.
             Iph_temp = random.randint(minServerLinks,
                                               maxServerLinks)
-                                              
+
             Iph_u =int(routers/6)
             nearest = nearestN(routersDict, -1,
                                xCoord, yCoord,
@@ -365,7 +365,7 @@ def main(argv):
                      nodes[conn[1]][0]]
                 y = [nodes[conn[0]][1],
                      nodes[conn[1]][1]]
-                splt.plot(x, y, '-k')
+                splt.plot(x, y, '-k',lw = 0.5)
 
             # Plotting nodes.
             for n in nodes:
@@ -377,8 +377,8 @@ def main(argv):
                 elif nodes[n][2] == "server":
                      faceColor = "green"
 
-                splt.plot(nodes[n][0], nodes[n][1], "or", 
-                          ms=10, mfc=faceColor, 
+                splt.plot(nodes[n][0], nodes[n][1], "or",
+                          ms=10, mfc=faceColor,
                           mec="black", mew=2)
 
             splt.set_xlim([-.5, maxXCoord + .5])
@@ -386,9 +386,11 @@ def main(argv):
             splt.axes.get_xaxis().set_visible(False)
             splt.axes.get_yaxis().set_visible(False)
             splt.grid()
-            pdf = PdfPages(outputFile + "_" + str(fn) + ".pdf")
-            pdf.savefig(fig)
-            pdf.close()
+            ##pdf = PdfPages(outputFile + "_" + str(fn) + ".pdf")
+            ##pdf.savefig(fig)
+            ##Iph_fig = splt.gcf()
+            fig.savefig('test.eps',formate = 'eps',dpi=1000)
+            ##pdf.close()
 
             fn = fn + 1
 
