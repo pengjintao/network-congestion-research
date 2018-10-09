@@ -365,7 +365,7 @@ def main(argv):
                      nodes[conn[1]][0]]
                 y = [nodes[conn[0]][1],
                      nodes[conn[1]][1]]
-                splt.plot(x, y, '-k',lw = 0.5)
+                splt.plot(x, y, '-k',lw = 0.2)
 
             # Plotting nodes.
             for n in nodes:
@@ -377,9 +377,10 @@ def main(argv):
                 elif nodes[n][2] == "server":
                      faceColor = "green"
 
-                splt.plot(nodes[n][0], nodes[n][1], "or",
-                          ms=10, mfc=faceColor,
-                          mec="black", mew=2)
+                #splt.plot(nodes[n][0], nodes[n][1], "or",
+                #         ms=10, mfc=faceColor,
+                #         mec="black", mew=2)
+                splt.scatter(nodes[n][0],nodes[n][1],s=20,c=faceColor,alpha=1,lw=0)
 
             splt.set_xlim([-.5, maxXCoord + .5])
             splt.set_ylim([-.5, maxYCoord + .5])
