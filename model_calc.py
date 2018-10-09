@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import deque
 import numpy as np
+import pure_bandwith_method as BMethod
 
 class Graph:
 	def __init__(self,configFile):
@@ -148,7 +149,7 @@ class Edge:
 		self.OutEdges = [] #check
 		self.Start = None   #check
 		self.End = None     #check
-		self.bandwidth = int()
+		self.bandwidth = 1
 		self.curPacket = None
 		self.Congestion = False
 		self.prev = None # used for shortest path generator
@@ -258,7 +259,9 @@ def main(argv):
 	add_msg_to_Node(MsgD,G)
 	G.PrintGraphMessage()
 	#print(Msg_Dicts)
-	a = [4,5,4,6]
+	
+	#开始纯带宽计算
+	BMethod.pure_bandwith_estimate(G,MsgD)
 
 
 
