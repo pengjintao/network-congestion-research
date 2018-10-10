@@ -61,13 +61,13 @@ class Graph:
 			temp.End = self.NodeMap[x["destination_id"]]
 			temp.End.InEdges.append(temp)
 			if temp.Start.type == 0:
-				print("temp.start.type = InNode");
+				#print("temp.start.type = InNode");
 				temp.EdgeType = 0
 			if temp.End.type == 2:
-				print("temp.start.type = OutNode");
+				#print("temp.start.type = OutNode");
 				temp.EdgeType = 2;
 			if temp.Start.type == 1 and temp.End.type == 1:
-				print("Router Edge ")
+				#print("Router Edge ")
 				temp.EdgeType = 1
 			self.Edges.append(temp)
 		#init Edge.OutEdges and Edge.InEdges
@@ -119,20 +119,28 @@ class Graph:
 			self.MsgRout[SendNode.Iph_I][RecvNode.Iph_I].append(e)
 			e = e.prev
 		self.MsgRout[SendNode.Iph_I][RecvNode.Iph_I].reverse();
-		print("Start= %s end=%s "%(SendNode.label,RecvNode.label),end=' ')
-		for x in self.MsgRout[SendNode.Iph_I][RecvNode.Iph_I]:
-			print(x.label,end = ' ')
-		print(' ')
+		# print("Start= %s end=%s "%(SendNode.label,RecvNode.label),end=' ')
+		# for x in self.MsgRout[SendNode.Iph_I][RecvNode.Iph_I]:
+		# 	print(x.label,end = ' ')
+		# print(' ')
+	
+	def print_graph_MsgRout_table(self):
+		for x in self.InNode:
+			for y in self.OutNode:
+				print("Start= %s end=%s "%(x.label,y.label),end=' ')
+				for l in self.MsgRout[x.Iph_I][y.Iph_I]:
+					print(l.label,end = ' ')
+				print("")
 	def PrintGraphMessage(self):
 		for x in self.InNode:
 			if x.Msgs.nextMsg != None:
 				p = MsgChan()
 				p.nextMsg = x.Msgs.nextMsg
 				#print(type(p.nextMsg.msg.start))
-				print("%s %d"%(p.nextMsg.msg.start.label + p.nextMsg.msg.end.label,p.nextMsg.msg.size))
+				print("%s %d"%(p.nextMsg.msg.Start.label + p.nextMsg.msg.End.label,p.nextMsg.msg.size))
 				p.nextMsg = p.nextMsg.nextMsg
 				while p.nextMsg != x.Msgs.nextMsg:
-					print("%s %d"%(p.nextMsg.msg.start.label + p.nextMsg.msg.end.label,p.nextMsg.msg.size))
+					print("%s %d"%(p.nextMsg.msg.Start.label + p.nextMsg.msg.End.label,p.nextMsg.msg.size))
 					p.nextMsg = p.nextMsg.nextMsg
 		
 
@@ -224,8 +232,8 @@ def Init_random_Msgs(G,n):
 		else:
 			temp = Msg()
 			temp.size = size
-			temp.start = G.NodeMap[A.label]
-			temp.end = G.NodeMap[B.label]
+			temp.Start = G.NodeMap[A.label]
+			temp.End = G.NodeMap[B.label]
 			#print(G.NodeMap[B.label])
 			Msg_Dicts[A.label + B.label]= {}
 			Msg_Dicts[A.label + B.label]["Msg"] = temp
@@ -233,9 +241,12 @@ def Init_random_Msgs(G,n):
 			Msg_Dicts[A.label + B.label]["end"] = B
 			#A.Msgs.insert(temp)
 	return Msg_Dicts
-def print_Msg_Diects(Msg_Dicts):
+def print_Msg_Diects(G,Msg_Dicts):
 	for key,data in Msg_Dicts.items():
 		print ("Msg:%s size:%d"%(key,data["Msg"].size))
+		for l in G.MsgRout[data["start"].Iph_I][data["end"].Iph_I]:
+			print(l.label,end = ' ')
+		print("")
 def add_msg_to_Node(MsgD,G):
 	for x in G.InNode:
 		while x.Msgs.nextMsg != None:
@@ -249,9 +260,10 @@ def main(argv):
 	configFile = "test_1.json"
 	#图的初始化
 	G = Graph(configFile)
+	#G.print_graph_MsgRout_table()
     #生成40条随机消息
-	MsgD = Init_random_Msgs(G,40)
-	print_Msg_Diects(MsgD)
+	MsgD = Init_random_Msgs(G,4)
+	print_Msg_Diects(G,MsgD)
 	print("")
     #将随机生成的消息初始化进G中
 	#add_msg_to_Node(MsgD,G)
@@ -261,8 +273,10 @@ def main(argv):
 	#print(Msg_Dicts)
 	
 	#开始纯带宽计算
-	BMethod.pure_bandwith_estimate(G,MsgD)
-
+	time,MsgFinishDict = BMethod.pure_bandwith_estimate(G,MsgD)
+	print("total time = %f"%(time))
+	for x,time in MsgFinishDict.items():
+		print("Msg:%s  FinishTime:%f"%(x.Start.label+"-" + x.End.label,time))
 
 
 if __name__ == "__main__":
