@@ -1,5 +1,6 @@
  #!/usr/bin/python
 import sys
+import copy
 import getopt
 import json
 import random
@@ -14,6 +15,7 @@ import latency_bandwith_method as LBMethod
 
 class Graph:
 	def __init__(self,configFile):
+		self.MsgCounter = int(0)
 		self.Edges = []
 		self.InNode = []
 		self.OutNode = []
@@ -125,6 +127,8 @@ class Graph:
 		# 	print(x.label,end = ' ')
 		# print(' ')
 	
+	def MessageEmpty(self):
+		return self.MsgCounter <= 0
 	def print_graph_MsgRout_table(self):
 		for x in self.InNode:
 			for y in self.OutNode:
@@ -252,8 +256,10 @@ def add_msg_to_Node(MsgD,G):
 	for x in G.InNode:
 		while x.Msgs.nextMsg != None:
 			x.Msgs.delete_first()
+	G.MsgCounter = 0
 	for x,data in MsgD.items():
 		data["start"].Msgs.insert(data["Msg"])
+	G.MsgCounter = len(MsgD)
 		#print(type(data["Msg"].start))
 
 def main(argv):
@@ -264,14 +270,16 @@ def main(argv):
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
 	MsgD = Init_random_Msgs(G,4)
+	MsgD1 = copy.copy(MsgD)
 	print("打印消息路由路径")
 	print_Msg_Diects(G,MsgD)
 	print("")
+
     #将随机生成的消息初始化进G中
 	#add_msg_to_Node(MsgD,G)
 	#G.PrintGraphMessage()
-	add_msg_to_Node(MsgD,G)
-	G.PrintGraphMessage()
+	#add_msg_to_Node(MsgD,G)
+	#G.PrintGraphMessage()
 	#print(Msg_Dicts)
 	
 	#开始纯带宽计算
@@ -283,7 +291,7 @@ def main(argv):
 
 	#开始延迟带宽计算
 	print("\n开始延迟带宽计算")
-	LBMethod.latency_bandwith_estimate(G,MsgD)
+	LBMethod.latency_bandwith_estimate(G,MsgD1)
 
 if __name__ == "__main__":
     main(sys.argv)
