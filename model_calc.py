@@ -183,6 +183,7 @@ class MsgChan:
 		self.nextMsg = None
 		self.prevMsg = None
 	def ExtractPacket(self,e,G):
+		e.curPacket.clear()
 		if self.nextMsg == None:
 			#当前节点无任何消息，那么无法抽取任何packet
 			e.curPacket.clear()
@@ -190,17 +191,17 @@ class MsgChan:
 			#当前节点有消息，但无法确定是否往e这个方向去
 			#tag 用于识别当前节点无往e方向的消息的情况
 			tag = self.nextMsg
-			#tag1用于识别当前节点找到了往e方向去的下一个消息
-			tag1 = True
 			self.nextMsg = tag.nextMsg
-			while tag1 and tag != self.nextMsg:
+			while  tag != self.nextMsg:
 				if G.MsgRout[self.nextMsg.msg.Start.Iph_I][self.nextMsg.msg.End.Iph_I][0] == e:
+					print("check point")
 					e.curPacket.Msg = self.nextMsg.msg
-					self.nextMsg.sendedsize += 1
-					e.curPacket.PSN = self.nextMsg.sendedsize
+					self.nextMsg.msg.sendedsize += 1
+					e.curPacket.PSN = self.nextMsg.msg.sendedsize
 					e.curPacket.step = 0
-					if self.nextMsg.sendedsize == self.nextMsg.size:
-						self.delete_first
+					if self.nextMsg.msg.sendedsize >= self.nextMsg.msg.size:
+						
+						self.delete_first()
 					break
 				self.nextMsg = self.nextMsg.nextMsg
 
