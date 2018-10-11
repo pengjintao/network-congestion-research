@@ -10,6 +10,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import deque
 import numpy as np
 import pure_bandwith_method as BMethod
+import latency_bandwith_method as LBMethod
 
 class Graph:
 	def __init__(self,configFile):
@@ -263,6 +264,7 @@ def main(argv):
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
 	MsgD = Init_random_Msgs(G,4)
+	print("打印消息路由路径")
 	print_Msg_Diects(G,MsgD)
 	print("")
     #将随机生成的消息初始化进G中
@@ -273,11 +275,15 @@ def main(argv):
 	#print(Msg_Dicts)
 	
 	#开始纯带宽计算
+	print("\n开始纯带宽计算")
 	time,MsgFinishDict = BMethod.pure_bandwith_estimate(G,MsgD)
 	print("total time = %f"%(time))
 	for x,time in MsgFinishDict.items():
 		print("Msg:%s  FinishTime:%f"%(x.Start.label+"-" + x.End.label,time))
 
+	#开始延迟带宽计算
+	print("\n开始延迟带宽计算")
+	LBMethod.latency_bandwith_estimate(G,MsgD)
 
 if __name__ == "__main__":
     main(sys.argv)
