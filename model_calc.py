@@ -171,7 +171,7 @@ class Node:
 	def __init__(self):
 		#0(start node) 1 (Router) 2 (recv node)
 		self.label = ""
-		self.type = None  #check
+		self.type = 0  #check
 		self.InEdges = [] #check
 		self.OutEdges = [] #checks
 		self.Iph_I = int()
@@ -182,26 +182,26 @@ class MsgChan:
 		self.msg = None
 		self.nextMsg = None
 		self.prevMsg = None
+		self.msgNum = 0
 	def ExtractPacket(self,e,G):
 		e.curPacket.clear()
 		if self.nextMsg == None:
-			#当前节点无任何消息，那么无法抽取任何packet
+			#当前节点无任何消息，那么无法抽取任何packet	
 			e.curPacket.clear()
 		else:
+    			
 			#当前节点有消息，但无法确定是否往e这个方向去
-			#tag 用于识别当前节点无往e方向的消息的情况
-			tag = self.nextMsg
-			self.nextMsg = tag.nextMsg
-			while  tag != self.nextMsg:
+			for i in range(0,self.msgNum):
 				if G.MsgRout[self.nextMsg.msg.Start.Iph_I][self.nextMsg.msg.End.Iph_I][0] == e:
-					print("check point")
 					e.curPacket.Msg = self.nextMsg.msg
 					self.nextMsg.msg.sendedsize += 1
 					e.curPacket.PSN = self.nextMsg.msg.sendedsize
 					e.curPacket.step = 0
 					if self.nextMsg.msg.sendedsize >= self.nextMsg.msg.size:
-						
+						print("check point")
 						self.delete_first()
+					else:
+						self.nextMsg = self.nextMsg.nextMsg
 					break
 				self.nextMsg = self.nextMsg.nextMsg
 
@@ -217,6 +217,7 @@ class MsgChan:
 			temp.prevMsg = self.nextMsg.prevMsg;
 			temp.prevMsg.nextMsg = temp;
 			temp.nextMsg.prevMsg = temp;
+		self.msgNum += 1
 	def delete_first(self):
 		if self.nextMsg != None:
 			temp = self.nextMsg
@@ -226,6 +227,7 @@ class MsgChan:
 				self.nextMsg = temp.nextMsg;
 				self.nextMsg.prevMsg = temp.prevMsg
 				temp.prevMsg.nextMsg = self.nextMsg
+		self.msgNum -= 1
 	def Empty(self):
 		if self.nextMsg == None:
 			return True

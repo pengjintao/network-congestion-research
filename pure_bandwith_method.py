@@ -6,8 +6,10 @@ def pure_bandwith_estimate(G, MsgD):
     #按照阶段计算每次通信模式改变后的传输开销
     all_time = 0.0
     MsgTimeDict = {}
+    MsgSizeDict = {}
     for x ,data in MsgD.items():
         MsgTimeDict[data["Msg"]] = -1.0
+        MsgSizeDict[data["Msg"]] = data["Msg"].size
     while len(MsgD) > 0:
         #先初始化路由图
         #再设置第一时刻各个消息的带宽
@@ -61,14 +63,14 @@ def pure_bandwith_estimate(G, MsgD):
         #现在开始查找最先完成的一批消息的时间步
         minimum_time_step = 8888888888.0
         for msg, b in MsgRealBandwith.items():
-            t = msg.size / b
+            t = MsgSizeDict[msg] / b
             if t < minimum_time_step:
                 minimum_time_step = t
         all_time += minimum_time_step
         #将在这段时间内完成的消息剔除
         for msg, b in MsgRealBandwith.items():
-            msg.size -= minimum_time_step*MsgRealBandwith[msg]
-            if msg.size <= 0.0001:
+            MsgSizeDict[msg] -= minimum_time_step*MsgRealBandwith[msg]
+            if MsgSizeDict[msg] <= 0.0001:
                 del MsgD[msg.Start.label + msg.End.label]
                 MsgTimeDict[msg] = all_time
 
