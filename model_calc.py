@@ -163,7 +163,8 @@ class Edge:
 		self.Start = None   #check
 		self.End = None     #check
 		self.bandwidth = 1
-		self.curPacket = None
+		self.roundRobin = 0
+		self.curPacket = packet()
 		self.Congestion = False
 		self.prev = None # used for shortest path generator
 class Node:
@@ -181,6 +182,28 @@ class MsgChan:
 		self.msg = None
 		self.nextMsg = None
 		self.prevMsg = None
+	def ExtractPacket(self,e,G):
+		if self.nextMsg == None:
+			#当前节点无任何消息，那么无法抽取任何packet
+			e.curPacket.clear()
+		else:
+			#当前节点有消息，但无法确定是否往e这个方向去
+			#tag 用于识别当前节点无往e方向的消息的情况
+			tag = self.nextMsg
+			#tag1用于识别当前节点找到了往e方向去的下一个消息
+			tag1 = True
+			self.nextMsg = tag.nextMsg
+			while tag1 and tag != self.nextMsg:
+				if G.MsgRout[self.nextMsg.msg.Start.Iph_I][self.nextMsg.msg.End.Iph_I][0] == e:
+					e.curPacket.Msg = self.nextMsg.msg
+					self.nextMsg.sendedsize += 1
+					e.curPacket.PSN = self.nextMsg.sendedsize
+					e.curPacket.step = 0
+					if self.nextMsg.sendedsize == self.nextMsg.size:
+						self.delete_first
+					break
+				self.nextMsg = self.nextMsg.nextMsg
+
 	def insert(self,msg):
 		temp = MsgChan();
 		temp.msg = msg;
@@ -218,6 +241,18 @@ class packet:
 	def __init__(self):
 		self.Msg = None
 		self.PSN = int()
+		self.step = 0
+	def nextlink(self,G):
+		if self.Msg == None:
+			return None
+		IphList = G.MsgRout[self.Msg.Start.Iph_I][self.Msg.End.Iph_I]
+		if self.step+1 < len(IphList):
+			return IphList[self.step+1]
+		else:
+			return None
+	def clear(self):
+		self.Msg = None
+		self.PSN = 0
 		self.step = 0
 def Init_random_Msgs(G,n):
 	Msg_Dicts = {}
