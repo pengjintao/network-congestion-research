@@ -31,7 +31,7 @@ def pure_bandwith_estimate(G, MsgD):
             min_band_link_data = None
             #找到最小带宽的链路
             for x, data in LinkMsgs.items():
-                if min_band_link_data == None or  len(data) > len(min_band_link_data):
+                if min_band_link_data == None or  LinkMaxBandwith[x]/len(data) < LinkMaxBandwith[min_band_link]/len(min_band_link_data):
                     min_band_link = x
                     min_band_link_data = data
             #设置通过最小链路的消息的带宽

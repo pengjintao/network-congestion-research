@@ -11,9 +11,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import deque
 import numpy as np
 import pure_bandwith_method as BMethod
+import latency_bandwith_method as LBMethod
+import copy
 
 class Graph:
 	def __init__(self,configFile):
+		self.MsgCounter = int(0)
 		self.Edges = []
 		self.InNode = []
 		self.OutNode = []
@@ -125,6 +128,8 @@ class Graph:
 		# 	print(x.label,end = ' ')
 		# print(' ')
 	
+	def MessageEmpty(self):
+		return self.MsgCounter <= 0
 	def print_graph_MsgRout_table(self):
 		for x in self.InNode:
 			for y in self.OutNode:
@@ -159,14 +164,15 @@ class Edge:
 		self.Start = None   #check
 		self.End = None     #check
 		self.bandwidth = 1
-		self.curPacket = None
+		self.roundRobin = 0
+		self.curPacket = packet()
 		self.Congestion = False
 		self.prev = None # used for shortest path generator
 class Node:
 	def __init__(self):
 		#0(start node) 1 (Router) 2 (recv node)
 		self.label = ""
-		self.type = None  #check
+		self.type = 0  #check
 		self.InEdges = [] #check
 		self.OutEdges = [] #checks
 		self.Iph_I = int()
@@ -177,6 +183,29 @@ class MsgChan:
 		self.msg = None
 		self.nextMsg = None
 		self.prevMsg = None
+		self.msgNum = 0
+	def ExtractPacket(self,e,G):
+		e.curPacket.clear()
+		if self.nextMsg == None:
+			#当前节点无任何消息，那么无法抽取任何packet	
+			e.curPacket.clear()
+		else:
+    			
+			#当前节点有消息，但无法确定是否往e这个方向去
+			for i in range(0,self.msgNum):
+				if G.MsgRout[self.nextMsg.msg.Start.Iph_I][self.nextMsg.msg.End.Iph_I][0] == e:
+					e.curPacket.Msg = self.nextMsg.msg
+					self.nextMsg.msg.sendedsize += 1
+					e.curPacket.PSN = self.nextMsg.msg.sendedsize
+					e.curPacket.step = 0
+					if self.nextMsg.msg.sendedsize >= self.nextMsg.msg.size:
+					#	print("check point")
+						self.delete_first()
+					else:
+						self.nextMsg = self.nextMsg.nextMsg
+					break
+				self.nextMsg = self.nextMsg.nextMsg
+
 	def insert(self,msg):
 		temp = MsgChan();
 		temp.msg = msg;
@@ -189,6 +218,7 @@ class MsgChan:
 			temp.prevMsg = self.nextMsg.prevMsg;
 			temp.prevMsg.nextMsg = temp;
 			temp.nextMsg.prevMsg = temp;
+		self.msgNum += 1
 	def delete_first(self):
 		if self.nextMsg != None:
 			temp = self.nextMsg
@@ -198,6 +228,7 @@ class MsgChan:
 				self.nextMsg = temp.nextMsg;
 				self.nextMsg.prevMsg = temp.prevMsg
 				temp.prevMsg.nextMsg = self.nextMsg
+		self.msgNum -= 1
 	def Empty(self):
 		if self.nextMsg == None:
 			return True
@@ -214,6 +245,18 @@ class packet:
 	def __init__(self):
 		self.Msg = None
 		self.PSN = int()
+		self.step = 0
+	def nextlink(self,G):
+		if self.Msg == None:
+			return None
+		IphList = G.MsgRout[self.Msg.Start.Iph_I][self.Msg.End.Iph_I]
+		if self.step+1 < len(IphList):
+			return IphList[self.step+1]
+		else:
+			return None
+	def clear(self):
+		self.Msg = None
+		self.PSN = 0
 		self.step = 0
 
 def IphConstructMsg(a,b,size,Msg_Dicts,G):
@@ -294,6 +337,7 @@ def main(argv):
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
 	MsgD = Init_example_random_Msgs1(G)
+	MsgD1 = copy.copy(MsgD)
 	print_Msg_Diects(G,MsgD)
 	print("")
     #将随机生成的消息初始化进G中
@@ -303,11 +347,14 @@ def main(argv):
 	G.PrintGraphMessage()
 	#print(Msg_Dicts)
 	
-	#开始纯带宽计算
+	print("开始纯带宽计算")
 	time,MsgFinishDict = BMethod.pure_bandwith_estimate(G,MsgD)
 	print("total time = %f"%(time))
 	for x,time in MsgFinishDict.items():
 		print("Msg:%s  FinishTime:%f"%(x.Start.label+"-" + x.End.label,time))
+
+	print("延迟带宽计算")
+	LBMethod.latency_bandwith_estimate(G,MsgD1)
 
 
 if __name__ == "__main__":

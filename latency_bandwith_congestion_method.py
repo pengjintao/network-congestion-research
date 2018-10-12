@@ -3,23 +3,23 @@ import model_calc as MC
 import queue
 import copy
 
-def update_start(e,G,CongestionTag):
+def update_start(e,G,MsgSendtime,MsgBlockGap):
    # print("start update")
-    if CongestionTag[e]:
-        CongestionTag[e] = False
+    if e.Congestion:
+        e.Congestion = False
     else:
         if e.curPacket.Msg != None:
             print("error happend")
         P = e.Start
         P.Msgs.ExtractPacket(e,G)
     return e.curPacket
-def update(e,G,RoundRobinIndex,CongestionTag):
+def update(e,G,MsgSendtime,MsgBlockGap,LinkMsgsPassing):
     #print("link update")
-    if CongestionTag[e]:
-        CongestionTag[e] = False
+    if e.Congestion:
+        e.Congestion = False
         for l in e.InEdges:
             if l.curPacket.nextlink(G) == e:
-                CongestionTag[l] = True
+                l.Congestion = True
                 #insert_edge_to_queue(e,Q,S,NodeMap)
         return e.curPacket
 
@@ -40,9 +40,9 @@ def update(e,G,RoundRobinIndex,CongestionTag):
 
 
     tag = True
-    backup = RoundRobinIndex[e] 
+    backup = e.roundRobin
     for i in range(1,len(e.InEdges)+1):
-        index = (i + RoundRobinIndex[e])%len(e.InEdges)
+        index = (i + e.roundRobin)%len(e.InEdges)
         if e.InEdges[index].curPacket.nextlink(G) == e:
             #index边有消息包，并且其下一条链路是e
             if tag:
@@ -58,14 +58,12 @@ def update(e,G,RoundRobinIndex,CongestionTag):
 
                 #print(e.curPacket.Msg.sendedsize)
                 e.curPacket.step += 1
-                CongestionTag[e.InEdges[index]]= False
-                #e.InEdges[index].Congestion = False
+                e.InEdges[index].Congestion = False
                 e.InEdges[index].curPacket.clear()
             else:
-                CongestionTag[e.InEdges[index]]= True
-                #e.InEdges[index].Congestion = True
+                e.InEdges[index].Congestion = True
             #insert_edge_to_queue(e.InEdges[index],Q,S,NodeMap)
-    RoundRobinIndex[e] = backup
+    e.roundRobin = backup
     return e.curPacket
 
 # def insert_edge_to_queue(e,Q,S,NodeMap):
@@ -78,20 +76,23 @@ def update(e,G,RoundRobinIndex,CongestionTag):
 #                 insert_edge_to_queue(e1,Q,S,NodeMap)
 def takeSecond(elem):
     return elem[1]                
-def latency_bandwith_estimate(G, MsgD):
+def latency_bandwith_congestion_estimate(G, MsgD):
     print("start")
     MC.add_msg_to_Node(MsgD,G)
     #MC.print_Msg_Diects(G,MsgD)
     #print("add msg to Node")
     #G.PrintGraphMessage()
-    RoundRobinIndex = {}
-    CongestionTag = {}
+
+
     Temp = {}
 
+    MsgSendtime = {}
+    MsgBlockGap = {}
+    LinkMsgsPassing = {}
 
     for key,data in MsgD.items():
-        #MsgSendtime[data["Msg"]] = 0
-       # MsgBlockGap[data["Msg"]] = 0
+        MsgSendtime[data["Msg"]] = 0
+        MsgBlockGap[data["Msg"]] = 0
         count = 10000
         for e in G.MsgRout[data["Msg"].Start.Iph_I][data["Msg"].End.Iph_I]:
             if e in Temp:
@@ -102,9 +103,7 @@ def latency_bandwith_estimate(G, MsgD):
     EdgeUpdateOrder = []
     for e,value in Temp.items():
         EdgeUpdateOrder.append([e,value])
-        RoundRobinIndex[e] = 0
-        CongestionTag[e] = False
-        #LinkMsgsPassing[e] = set()
+        LinkMsgsPassing[e] = set()
     EdgeUpdateOrder.sort(key = takeSecond)
 
     #for i in range(0,len(EdgeUpdateOrder)):
@@ -121,8 +120,9 @@ def latency_bandwith_estimate(G, MsgD):
     #         Q.put(e)
     #         S.add(e)
     all_time = 0.0
+    print(G.MsgCounter)
     while not G.MessageEmpty():
-        #print(G.MsgCounter)
+        #print("tag")
         #更新一个时间步
         all_time += 1
         # Q = queue.Queue()
@@ -139,18 +139,16 @@ def latency_bandwith_estimate(G, MsgD):
             #e = Q.get()
             if e.Start.type == 0:
                # print("Input edge")
-                update_start(e,G,CongestionTag) 
+                update_start(e,G,MsgSendtime,MsgBlockGap) 
             else:
-                update(e,G,RoundRobinIndex,CongestionTag)
+                update(e,G,MsgSendtime,MsgBlockGap,LinkMsgsPassing)
             pack = e.curPacket
             if pack.Msg != None and e.End.type == 2 and pack.PSN == pack.Msg.size:
                 G.MsgCounter -= 1
-                #print("check")
+               # print("check")
                 MsgD[pack.Msg.Start.label + pack.Msg.End.label]["time"] = all_time
                 print("%s finised %d"%(pack.Msg.Start.label + pack.Msg.End.label,all_time))
-                pack.Msg.clear()
-                pack.clear()
             if pack.Msg != None and e.End.type == 2:
                 e.curPacket.clear()
-                #print("check1")
+               # print("check1")
     return all_time

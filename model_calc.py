@@ -12,6 +12,7 @@ from collections import deque
 import numpy as np
 import pure_bandwith_method as BMethod
 import latency_bandwith_method as LBMethod
+import latency_bandwith_congestion_method as LBCMethod
 
 class Graph:
 	def __init__(self,configFile):
@@ -147,7 +148,7 @@ class Graph:
 				while p.nextMsg != x.Msgs.nextMsg:
 					print("%s %d"%(p.nextMsg.msg.Start.label + p.nextMsg.msg.End.label,p.nextMsg.msg.size))
 					p.nextMsg = p.nextMsg.nextMsg
-		
+
 
 
 
@@ -198,7 +199,7 @@ class MsgChan:
 					e.curPacket.PSN = self.nextMsg.msg.sendedsize
 					e.curPacket.step = 0
 					if self.nextMsg.msg.sendedsize >= self.nextMsg.msg.size:
-						print("check point")
+					#	print("check point")
 						self.delete_first()
 					else:
 						self.nextMsg = self.nextMsg.nextMsg
@@ -240,6 +241,8 @@ class Msg:
 		self.sendedsize = 0
 		self.Start = None
 		self.End = None
+	def clear(self):
+		self.sendedsize = 0
 class packet:
 	def __init__(self):
 		self.Msg = None
@@ -303,15 +306,18 @@ def add_msg_to_Node(MsgD,G):
 def main(argv):
 	print("calculation start")
 	configFile = "test_1.json"
+	saveFile = "save"
 	#图的初始化
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
-	MsgD = Init_random_Msgs(G,4)
+	MsgD = Init_random_Msgs(G,10)
 	MsgD1 = copy.copy(MsgD)
+	MsgD2 = copy.copy(MsgD)
 	print("打印消息路由路径")
 	print_Msg_Diects(G,MsgD)
 	print("")
+
 
     #将随机生成的消息初始化进G中
 	#add_msg_to_Node(MsgD,G)
@@ -324,12 +330,20 @@ def main(argv):
 	print("\n开始纯带宽计算")
 	time,MsgFinishDict = BMethod.pure_bandwith_estimate(G,MsgD)
 	print("total time = %f"%(time))
+	T = []
 	for x,time in MsgFinishDict.items():
-		print("Msg:%s  FinishTime:%f"%(x.Start.label+"-" + x.End.label,time))
+		T.append([x.Start.label+"-" + x.End.label,time,x.size])
+	T.sort(key = LBMethod.takeSecond)
+	for x,time,size in T:
+		print("Msg:%s  FinishTime:%f  size = %d"%(x,time,size))
 
 	#开始延迟带宽计算
 	print("\n开始延迟带宽计算")
 	LBMethod.latency_bandwith_estimate(G,MsgD1)
 
+	LBMethod.latency_bandwith_estimate(G,MsgD2)
+
+	print("\n开始端到端的拥塞延迟带宽计算")
+	#LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
 if __name__ == "__main__":
     main(sys.argv)
