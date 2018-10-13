@@ -1,6 +1,6 @@
  #!/usr/bin/python
 import sys
-import copy
+sys.path.append("../")
 import getopt
 import json
 import random
@@ -12,7 +12,7 @@ from collections import deque
 import numpy as np
 import pure_bandwith_method as BMethod
 import latency_bandwith_method as LBMethod
-import latency_bandwith_congestion_method as LBCMethod
+import copy
 
 class Graph:
 	def __init__(self,configFile):
@@ -57,11 +57,8 @@ class Graph:
 			self.NodeMap[x["node_id"]] = temp
 
 		#开始初始化Edge
-		count = 0
 		for x in Input["connections"]:
 			temp = Edge()
-			temp.Iph_I = count
-			count+=1
 			temp.label = x["source_id"] +"--" + x["destination_id"]
 			temp.Start = self.NodeMap[x["source_id"]]
 			temp.Start.OutEdges.append(temp)
@@ -151,14 +148,13 @@ class Graph:
 				while p.nextMsg != x.Msgs.nextMsg:
 					print("%s %d"%(p.nextMsg.msg.Start.label + p.nextMsg.msg.End.label,p.nextMsg.msg.size))
 					p.nextMsg = p.nextMsg.nextMsg
-
+		
 
 
 
 
 class Edge:
 	def __init__(self):
-		self.Iph_I = 0
 	#	print("start")
 		#EdgeType 0(input edge) 1(mid edge) 2(out edge)
 		self.label = ""
@@ -188,45 +184,28 @@ class MsgChan:
 		self.nextMsg = None
 		self.prevMsg = None
 		self.msgNum = 0
-	def ExtractPacket(self,e,G,MsgSendGap):
+	def ExtractPacket(self,e,G):
 		e.curPacket.clear()
 		if self.nextMsg == None:
-			#print("check")
 			#当前节点无任何消息，那么无法抽取任何packet	
 			e.curPacket.clear()
 		else:
-			#当前开始边e所连接的消息，先抽取消息
-			tag =  False
+    			
+			#当前节点有消息，但无法确定是否往e这个方向去
 			for i in range(0,self.msgNum):
-				if MsgSendGap[self.nextMsg.msg][1] == 0:
+				if G.MsgRout[self.nextMsg.msg.Start.Iph_I][self.nextMsg.msg.End.Iph_I][0] == e:
 					e.curPacket.Msg = self.nextMsg.msg
-					MsgSendGap[self.nextMsg.msg][2] += 1
-					e.curPacket.PSN = MsgSendGap[self.nextMsg.msg][2]
+					self.nextMsg.msg.sendedsize += 1
+					e.curPacket.PSN = self.nextMsg.msg.sendedsize
 					e.curPacket.step = 0
-					#print(e.curPacket.PSN)
-					if e.curPacket.PSN >= self.nextMsg.msg.size:
+					if self.nextMsg.msg.sendedsize >= self.nextMsg.msg.size:
 					#	print("check point")
 						self.delete_first()
 					else:
 						self.nextMsg = self.nextMsg.nextMsg
-						tag = True
 					break
 				self.nextMsg = self.nextMsg.nextMsg
-			#更新e中每一个消息的时间步
-			if self.nextMsg != None:
-				for i in range(0,self.msgNum-1):
-					if MsgSendGap[self.nextMsg.msg][1] != 0 :
-						MsgSendGap[self.nextMsg.msg][1]+=1
-						if MsgSendGap[self.nextMsg.msg][1] == MsgSendGap[self.nextMsg.msg][0]:
-							MsgSendGap[self.nextMsg.msg][1] = 0
-						self.nextMsg = self.nextMsg.nextMsg
-				if tag:
-					tag = False
-					MsgSendGap[self.nextMsg.msg][1]+=1
-					if MsgSendGap[self.nextMsg.msg][1] == MsgSendGap[self.nextMsg.msg][0]:
-						MsgSendGap[self.nextMsg.msg][1] = 0
-					self.nextMsg = self.nextMsg.nextMsg
-				 
+
 	def insert(self,msg):
 		temp = MsgChan();
 		temp.msg = msg;
@@ -281,6 +260,37 @@ class packet:
 		self.Msg = None
 		self.PSN = 0
 		self.step = 0
+
+def IphConstructMsg(a,b,size,Msg_Dicts,G):
+    label = "node" + str(a)+"node" + str(b)
+    temp = Msg()
+    temp.size = size
+    temp.Start = G.NodeMap["node" + str(a)]
+    temp.End = G.NodeMap["node" + str(b)]
+    print(temp.Start.label,end = ' ')
+    print(temp.End.label)
+    Msg_Dicts[label] = {}
+    Msg_Dicts[label]["Msg"] = temp
+    Msg_Dicts[label]["start"] = temp.Start
+    Msg_Dicts[label]["end"] = temp.End
+
+def Init_example_random_Msgs1(G):
+    Msg_Dicts = {}
+    IphConstructMsg(5,14,80,Msg_Dicts,G)
+    IphConstructMsg(1,12,20,Msg_Dicts,G)
+    IphConstructMsg(2,12,20,Msg_Dicts,G)
+    IphConstructMsg(3,12,20,Msg_Dicts,G)
+    IphConstructMsg(4,12,20,Msg_Dicts,G)
+
+
+    IphConstructMsg(6,12,80,Msg_Dicts,G)
+    IphConstructMsg(7,13,20,Msg_Dicts,G)
+    IphConstructMsg(8,13,20,Msg_Dicts,G)
+    IphConstructMsg(9,13,20,Msg_Dicts,G)
+    IphConstructMsg(10,13,20,Msg_Dicts,G)
+    return Msg_Dicts
+
+
 def Init_random_Msgs(G,n):
 	Msg_Dicts = {}
 	SenderCount = len(G.InNode);
@@ -318,53 +328,40 @@ def add_msg_to_Node(MsgD,G):
 	for x in G.InNode:
 		while x.Msgs.nextMsg != None:
 			x.Msgs.delete_first()
-	G.MsgCounter = 0
 	for x,data in MsgD.items():
 		data["start"].Msgs.insert(data["Msg"])
-	G.MsgCounter = len(MsgD)
 		#print(type(data["Msg"].start))
-
+   
 def main(argv):
 	print("calculation start")
-	configFile = "test_1.json"
-	saveFile = "save"
+	configFile = "specific_graph.json"
+	def clear(self):
+		self.sendedsize = 0
 	#图的初始化
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
-    #生成40条随机消息
-	MsgD = Init_random_Msgs(G,2)
+	def clear(self):
+		self.sendedsize = 0
+	MsgD = Init_example_random_Msgs1(G)
 	MsgD1 = copy.copy(MsgD)
-	MsgD2 = copy.copy(MsgD)
-	print("打印消息路由路径")
 	print_Msg_Diects(G,MsgD)
 	print("")
-
-
     #将随机生成的消息初始化进G中
 	#add_msg_to_Node(MsgD,G)
 	#G.PrintGraphMessage()
-	#add_msg_to_Node(MsgD,G)
-	#G.PrintGraphMessage()
+	add_msg_to_Node(MsgD,G)
+	G.PrintGraphMessage()
 	#print(Msg_Dicts)
 	
-	#开始纯带宽计算
-	print("\n开始纯带宽计算")
+	print("开始纯带宽计算")
 	time,MsgFinishDict = BMethod.pure_bandwith_estimate(G,MsgD)
 	print("total time = %f"%(time))
-	T = []
 	for x,time in MsgFinishDict.items():
-		T.append([x.Start.label+"-" + x.End.label,time,x.size])
-	T.sort(key = LBMethod.takeSecond)
-	for x,time,size in T:
-		print("Msg:%s  FinishTime:%f  size = %d"%(x,time,size))
+		print("Msg:%s  FinishTime:%f"%(x.Start.label+"-" + x.End.label,time))
 
-	#开始延迟带宽计算
-	#print("\n开始延迟带宽计算")
-	#LBMethod.latency_bandwith_estimate(G,MsgD1)
+	print("延迟带宽计算")
+	LBMethod.latency_bandwith_estimate(G,MsgD1)
 
-	#LBMethod.latency_bandwith_estimate(G,MsgD2)
 
-	print("\n开始端到端的拥塞延迟带宽计算")
-	LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
 if __name__ == "__main__":
     main(sys.argv)
