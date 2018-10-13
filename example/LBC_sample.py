@@ -1,4 +1,4 @@
- #!/usr/bin/python
+﻿ #!/usr/bin/python
 import sys
 sys.path.append("../")
 import getopt
@@ -23,6 +23,7 @@ def IphConstructMsg(a,b,size,Msg_Dicts,G):
     temp.size = size
     temp.Start = G.NodeMap["node" + str(a)]
     temp.End = G.NodeMap["node" + str(b)]
+    temp.label=temp.Start.label+"-"+temp.End.label
     print(temp.Start.label,end = ' ')
     print(temp.End.label)
     Msg_Dicts[label] = {}
@@ -72,6 +73,7 @@ def Init_random_Msgs(G,n):
 			Msg_Dicts[A.label + B.label]["Msg"] = temp
 			Msg_Dicts[A.label + B.label]["start"] = A
 			Msg_Dicts[A.label + B.label]["end"] = B
+			temp.label = A.label + "-" + B.label
 			#A.Msgs.insert(temp)
 	return Msg_Dicts
 def print_Msg_Diects(G,Msg_Dicts):

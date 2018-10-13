@@ -38,6 +38,7 @@ def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgSendGap,MsgBlockL
         if e.InEdges[index].curPacket.nextlink(G) == e:
             #index边有消息包，并且其下一条链路是e
             if tag:
+                #print("Msg step")
                 backup = index
                 tag = False
                 #命中roundrobin的下一个packet
@@ -144,7 +145,7 @@ def latency_bandwith_congestion_estimate(G, MsgD):
 
     all_time = 0.0
     while MsgCounter > 0:
-       # print("test")
+        #print("time step")
         UnUpdatedMsgs = set()
         IphTag = True
         #更新一个时间步
@@ -163,7 +164,7 @@ def latency_bandwith_congestion_estimate(G, MsgD):
             pack = e.curPacket
             if pack.Msg != None and e.End.type == 2 and pack.PSN == pack.Msg.size:
                 MsgCounter -= 1
-                #print("check")
+               #print("check")
                 MsgD[pack.Msg.Start.label + pack.Msg.End.label]["time"] = all_time
                 print("%s finised %d"%(pack.Msg.Start.label + pack.Msg.End.label,all_time))
                 pack.Msg.clear()
@@ -184,12 +185,12 @@ def update_msg_congestion_information(msg,G,MsgSendGap,MsgBlockLinks,LinkMsgPass
     
         for e in G.MsgRout[msg.Start.Iph_I][msg.End.Iph_I]:
             if len(LinkMsgPassing[e]) > max_congestion:
-                MsgBlockLinks.clear()
-                MsgBlockLinks.add(e)
+                MsgBlockLinks[msg].clear()
+                MsgBlockLinks[msg].add(e)
                 max_congestion = len(LinkMsgPassing[e])
                 max_edge = e
             elif len(LinkMsgPassing[e]) == max_congestion:
-                MsgBlockLinks.add(e)
+                MsgBlockLinks[msg].add(e)
 
             if e.curPacket.Msg == msg and e.curPacket.PSN == 1:
                 break
