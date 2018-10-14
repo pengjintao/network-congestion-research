@@ -198,7 +198,7 @@ class MsgChan:
 			#当前开始边e所连接的消息，先抽取消息
 			tag =  False
 			for i in range(0,self.msgNum):
-				if MsgSendGap[self.nextMsg.msg][1] == 0:
+				if abs(MsgSendGap[self.nextMsg.msg][1]) <= 0.00001:
 					e.curPacket.Msg = self.nextMsg.msg
 					MsgSendGap[self.nextMsg.msg][2] += 1
 					e.curPacket.PSN = MsgSendGap[self.nextMsg.msg][2]
@@ -215,20 +215,20 @@ class MsgChan:
 			#更新e中每一个消息的时间步
 			if self.nextMsg != None:
 				for i in range(0,self.msgNum):
-					if MsgSendGap[self.nextMsg.msg][1] != 0 :
-						MsgSendGap[self.nextMsg.msg][1]+=1
-						if MsgSendGap[self.nextMsg.msg][1] >= MsgSendGap[self.nextMsg.msg][0]:
-							MsgSendGap[self.nextMsg.msg][1] = 0
-						self.nextMsg = self.nextMsg.nextMsg
+					if abs(MsgSendGap[self.nextMsg.msg][1]) > 0.00001 :
+						MsgSendGap[self.nextMsg.msg][1]+=MsgSendGap[self.nextMsg.msg][0]
+						if MsgSendGap[self.nextMsg.msg][1] >= 1.0 - 0.00001:
+							MsgSendGap[self.nextMsg.msg][1] = 0.0
+					self.nextMsg = self.nextMsg.nextMsg
 				
 				if tag:
 					tag = False
 					p = self.nextMsg.prevMsg.msg
-					MsgSendGap[p][1]+=1
-					if MsgSendGap[p][1] >= MsgSendGap[p][0]:
-						MsgSendGap[p][1] = 0
-				#p = self.nextMsg.prevMsg.msg
-					#print("%s  block = %d,count = %d"%(p.label,MsgSendGap[p][0],MsgSendGap[p][1]))
+					MsgSendGap[p][1]+=MsgSendGap[self.nextMsg.msg][0]
+					if MsgSendGap[p][1] >= 1.0 - 0.00001:
+						MsgSendGap[p][1] = 0.0
+				#p = self.nextMsg.msg
+				#print("%s  block = %f,count = %f"%(p.label,MsgSendGap[p][0],MsgSendGap[p][1]))
 				#else:print("test")
 	def insert(self,msg):
 		temp = MsgChan();
@@ -328,16 +328,47 @@ def add_msg_to_Node(MsgD,G):
 		data["start"].Msgs.insert(data["Msg"])
 	G.MsgCounter = len(MsgD)
 		#print(type(data["Msg"].start))
+def msgBackup_to_msgd(MSgBackup,MsgD,G):
+	for x in MSgBackup:
+		A = G.NodeMap[x[0]]
+		B = G.NodeMap[x[1]]
+		temp = Msg()
+		temp.size = x[2]
+		temp.Start = G.NodeMap[A.label]
+		temp.End = G.NodeMap[B.label]
+		temp.label = A.label + "-" + B.label
+		MsgD[A.label + B.label]= {}
+		MsgD[A.label + B.label]["Msg"] = temp
+		MsgD[A.label + B.label]["start"] = A
+		MsgD[A.label + B.label]["end"] = B
+def msgd_to_msgBackup(MsgD,MSgBackup,G):
+	for x,data in MsgD.items():
+		MSgBackup.append ([data["start"].label,data["end"].label,data["Msg"].size])
 
 def main(argv):
 	print("calculation start")
 	configFile = "test_1.json"
-	saveFile = "save"
+	saveFile2 = "save_Msg"
+
 	#图的初始化
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
-	MsgD = Init_random_Msgs(G,8)
+	MSgBackup = []
+	MsgD = None
+
+	#
+	if True:
+		MsgD = {}
+		with open(saveFile2+ ".json", 'r') as cFile:
+			MSgBackup = json.load(cFile)
+		msgBackup_to_msgd(MSgBackup,MsgD, G)
+	else:
+		MsgD = Init_random_Msgs(G,8)
+		msgd_to_msgBackup(MsgD,MSgBackup ,G)
+		with open(saveFile2 + ".json", "w") as ofile:
+			json.dump(MSgBackup, ofile, sort_keys=True,indent=4, separators=(',', ': '))
+
 	MsgD1 = copy.copy(MsgD)
 	MsgD2 = copy.copy(MsgD)
 	print("打印消息路由路径")
@@ -358,10 +389,10 @@ def main(argv):
 	print("total time = %f"%(time))
 	T = []
 	for x,time in MsgFinishDict.items():
-		T.append([x.Start.label+"-" + x.End.label,time,x.size])
+		T.append([x,time,x.size])
 	T.sort(key = LBMethod.takeSecond)
 	for x,time,size in T:
-		print("Msg:%s  FinishTime:%f  size = %d"%(x,time,size))
+		print("Msg:%s  FinishTime:%f  size = %d"%(x.label,time,size))
 
 	#开始延迟带宽计算
 	#print("\n开始延迟带宽计算")
@@ -370,6 +401,9 @@ def main(argv):
 	#LBMethod.latency_bandwith_estimate(G,MsgD2)
 
 	print("\n开始端到端的拥塞延迟带宽计算")
-	LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
+	time1,MsgFinishDict1 = LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
+	
+	for x,time,size in T:
+		print("Msg:%s  (LBCmethod - Bmethod)/Bmethod:%f  size = %d"%(x.label,(MsgFinishDict1[x] - time)/time,size))
 if __name__ == "__main__":
     main(sys.argv)
