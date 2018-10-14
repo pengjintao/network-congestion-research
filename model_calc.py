@@ -188,9 +188,10 @@ class MsgChan:
 		self.nextMsg = None
 		self.prevMsg = None
 		self.msgNum = 0
+		self.MsgQ = queue.Queue()
 	def ExtractPacket(self,e,G,MsgSendGap):
 		e.curPacket.clear()
-		if self.nextMsg == None:
+		if self.nextMsg == None and self.MsgQ.empty():
 			#print("check")
 			#当前节点无任何消息，那么无法抽取任何packet	
 			e.curPacket.clear()
@@ -198,35 +199,43 @@ class MsgChan:
 			#当前开始边e所连接的消息，先抽取消息
 			tag =  False
 			for i in range(0,self.msgNum):
-				if abs(MsgSendGap[self.nextMsg.msg][1]) <= 0.00001:
-					e.curPacket.Msg = self.nextMsg.msg
+				#print(abs(MsgSendGap[self.nextMsg.msg][1]))
+				if abs(MsgSendGap[self.nextMsg.msg][1]) <=MsgSendGap[self.nextMsg.msg][0]+ 0.00001:
+					pack = packet()
+					pack.Msg = self.nextMsg.msg
 					MsgSendGap[self.nextMsg.msg][2] += 1
-					e.curPacket.PSN = MsgSendGap[self.nextMsg.msg][2]
-					e.curPacket.step = 0
-					#print("msg =%s PSN = %d "%(self.nextMsg.msg.label,e.curPacket.PSN))
-					if e.curPacket.PSN >= self.nextMsg.msg.size:
+					pack.PSN = MsgSendGap[self.nextMsg.msg][2]
+					pack.step = 0
+					self.MsgQ.put(pack)
+					#print("msg =%s PSN = %d "%(self.nextMsg.msg.label,pack.PSN))
+					#print("msg =%s "%(self.nextMsg.msg.label))
+					if pack.PSN >= self.nextMsg.msg.size:
 					#	print("check point")
 						self.delete_first()
 					else:
 						self.nextMsg = self.nextMsg.nextMsg
-						tag = True
-					break
-				self.nextMsg = self.nextMsg.nextMsg
+				else:
+					self.nextMsg = self.nextMsg.nextMsg
 			#更新e中每一个消息的时间步
 			if self.nextMsg != None:
 				for i in range(0,self.msgNum):
-					if abs(MsgSendGap[self.nextMsg.msg][1]) > 0.00001 :
-						MsgSendGap[self.nextMsg.msg][1]+=MsgSendGap[self.nextMsg.msg][0]
-						if MsgSendGap[self.nextMsg.msg][1] >= 1.0 - 0.00001:
-							MsgSendGap[self.nextMsg.msg][1] = 0.0
+					MsgSendGap[self.nextMsg.msg][1]+=MsgSendGap[self.nextMsg.msg][0]
+					while MsgSendGap[self.nextMsg.msg][1] >= 1.0:
+						MsgSendGap[self.nextMsg.msg][1] = MsgSendGap[self.nextMsg.msg][1] - 1.0
 					self.nextMsg = self.nextMsg.nextMsg
 				
-				if tag:
-					tag = False
-					p = self.nextMsg.prevMsg.msg
-					MsgSendGap[p][1]+=MsgSendGap[self.nextMsg.msg][0]
-					if MsgSendGap[p][1] >= 1.0 - 0.00001:
-						MsgSendGap[p][1] = 0.0
+				# if tag:
+				# 	tag = False
+				# 	p = self.nextMsg.prevMsg.msg
+				# 	MsgSendGap[p][1]+=MsgSendGap[self.nextMsg.msg][0]
+				# 	if MsgSendGap[p][1] >= 1.0 - 0.00001:
+				# 		MsgSendGap[p][1] = 0.0
+
+			
+			if not self.MsgQ.empty():
+				e.curPacket = copy.copy(self.MsgQ.get())
+				#else:
+					#print("check 轮空")
 				#p = self.nextMsg.msg
 				#print("%s  block = %f,count = %f"%(p.label,MsgSendGap[p][0],MsgSendGap[p][1]))
 				#else:print("test")
@@ -294,7 +303,7 @@ def Init_random_Msgs(G,n):
 	for i in range(0,n):
 		a = random.randint(0,SenderCount-1)
 		b = random.randint(0,RecverCount-1)
-		A = G.InNode[a]
+		A = G.InNode[2]
 		B = G.OutNode[b]
 		size = random.randint(1,1000)
 		if (A.label + B.label) in Msg_Dicts:
@@ -358,13 +367,13 @@ def main(argv):
 	MsgD = None
 
 	#
-	if True:
+	if False:
 		MsgD = {}
 		with open(saveFile2+ ".json", 'r') as cFile:
 			MSgBackup = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
 	else:
-		MsgD = Init_random_Msgs(G,8)
+		MsgD = Init_random_Msgs(G,3)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
 			json.dump(MSgBackup, ofile, sort_keys=True,indent=4, separators=(',', ': '))

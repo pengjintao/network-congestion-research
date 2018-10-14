@@ -147,25 +147,22 @@ def latency_bandwith_congestion_estimate(G, MsgD):
 
     all_time = 0.0
     while MsgCounter > 0:
-        #print("time step")
+        #print("")
         #UnUpdatedMsgs = set()
         update_msg_bandwith(G,MsgSendGap,LinkMsgPassing)
-        IphTag = True
         #更新一个时间步
         all_time += 1
         #更新整个网络
         for e,value in EdgeUpdateOrder:
             if e.Start.type == 0:
-               # print("Input edge")
-                if IphTag:
-                    IphTag = False
+                #print("Input edge")
                 update_start(e,G,CongestionTag,MsgSendGap,StartEdgeMsgs,LinkMsgPassing) 
             else:
                 update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks)
             pack = e.curPacket
             if pack.Msg != None and e.End.type == 2 and pack.PSN == pack.Msg.size:
                 MsgCounter -= 1
-               #print("check")
+                #print("check")
                 MsgD[pack.Msg.Start.label + pack.Msg.End.label]["time"] = all_time
                 print("%s finised %d"%(pack.Msg.Start.label + pack.Msg.End.label,all_time))
                 FinishDict[pack.Msg] = all_time
@@ -198,7 +195,7 @@ def update_msg_congestion_information(msg,G,MsgSendGap,MsgBlockLinks,LinkMsgPass
                 break
         MsgSendGap[msg][0] = max_congestion
 
-def get_most_congestion_edge(LinkMsgPassingCopy):
+def get_most_congestion_edge(LinkMsgPassingCopy,LinkBandwith):
     max_e  = None
     band = 0.0
     for e,data in LinkMsgPassingCopy.items():
@@ -208,7 +205,7 @@ def get_most_congestion_edge(LinkMsgPassingCopy):
     #del LinkMsgPassingCopy[e]
     if max_e != None:
         if len(LinkMsgPassingCopy[max_e]) != 0:
-            band =1.0/(len(LinkMsgPassingCopy[max_e]))
+            band =LinkBandwith[max_e]/(len(LinkMsgPassingCopy[max_e]))
         else:
             max_e = None
     return max_e,band
@@ -222,14 +219,16 @@ def update_msg_bandwith(G,MsgSendGap,LinkMsgPassing):
         LinkBandwith[e] = 1.0
     count = len(MsgSendGap)
     MinBand = 0.0
-    max_e,MinBand = get_most_congestion_edge(LinkMsgPassingCopy)
+    max_e,MinBand = get_most_congestion_edge(LinkMsgPassingCopy,LinkBandwith)
     
     #目的时计算每一条消息的有效带宽
     while max_e != None:
         for msg in LinkMsgPassingCopy[max_e]:
             #设定每个消息的带宽MsgSendGap，已经设置过带宽的消息集合
+            # if abs(MsgSendGap[msg][0] - MinBand) >= 0.00001:
+            #     MsgSendGap[msg][1] = 0.0
             MsgSendGap[msg][0] = MinBand
-            print("msg:%s band:%f"%(msg.label,MinBand))
+            #print("msg:%s band:%f"%(msg.label,MinBand))
             #更新LinkMsgPassingCopy[最拥塞的链路，每个消息通过的所有链路上]
             #更新所有已经确定带宽的msg，通过的链路的剩余带宽LinkBandwith
             for l in G.MsgRout[msg.Start.Iph_I][msg.End.Iph_I]:
@@ -241,7 +240,7 @@ def update_msg_bandwith(G,MsgSendGap,LinkMsgPassing):
         LinkMsgPassingCopy[max_e].clear()
         del LinkMsgPassingCopy[max_e]
         #先找到最拥塞的链路计算其中的消息的带宽
-        max_e,MinBand = get_most_congestion_edge(LinkMsgPassingCopy)
+        max_e,MinBand = get_most_congestion_edge(LinkMsgPassingCopy,LinkBandwith)
     
 
 
