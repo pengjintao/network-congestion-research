@@ -337,7 +337,7 @@ def main(argv):
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
-	MsgD = Init_random_Msgs(G,2)
+	MsgD = Init_random_Msgs(G,8)
 	MsgD1 = copy.copy(MsgD)
 	MsgD2 = copy.copy(MsgD)
 	print("打印消息路由路径")

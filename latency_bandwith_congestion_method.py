@@ -3,7 +3,7 @@ import model_calc as MC
 import queue
 import copy
 
-def update_start(e,G,CongestionTag,MsgSendGap,UnUpdatedMsgs,StartEdgeMsgs):
+def update_start(e,G,CongestionTag,MsgSendGap,StartEdgeMsgs):
     #在update_start中需要注意的事项
     #对于端到端流控，
    # print("start update")
@@ -12,9 +12,9 @@ def update_start(e,G,CongestionTag,MsgSendGap,UnUpdatedMsgs,StartEdgeMsgs):
     else:
         if e.curPacket.Msg != None:
             print("error happend")
-        P = e.Start
+        #P = e.Start
         StartEdgeMsgs[e].ExtractPacket(e,G,MsgSendGap)
-        msg =e.curPacket.Msg
+        # msg =e.curPacket.Msg
         # if not( msg.PSN == 1 and msg.PSN == msg.size):
         #     #只处理消息大小大于1的消息才会出发流量控制
         #     if msg.PSN == 1:
@@ -22,7 +22,7 @@ def update_start(e,G,CongestionTag,MsgSendGap,UnUpdatedMsgs,StartEdgeMsgs):
         #     elif msg.PSN == msg.size:
         #         #msg末尾包通过e
     return e.curPacket
-def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgSendGap,MsgBlockLinks,UnUpdatedMsgs):
+def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks):
     #print("link update")
     if CongestionTag[e]:
         CongestionTag[e] = False
@@ -43,33 +43,33 @@ def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgSendGap,MsgBlockL
                 tag = False
                 #命中roundrobin的下一个packet
                 e.curPacket = copy.copy(e.InEdges[index].curPacket)
-                msg =e.curPacket.Msg
-                pack = e.curPacket
-                if not( pack.PSN == 1 and pack.PSN == msg.size):
-                    #只处理消息大小大于1的消息才会出发流量控制
-                    if pack.PSN == 1:
-                        #msg首个包进入该链路
-                        LinkMsgPassing[e].add(msg)
-                        s = len(LinkMsgPassing[e])
-                        #阻塞数量小于等于1没有触发端到端的拥塞控制的必要
-                        if s > 1:
-                            for msg in LinkMsgPassing[e]:
-                                if s > MsgSendGap[msg][0]:
-                                    #当e上发生的拥塞数量大于消息msg的最多的拥塞数量时
-                                    MsgBlockLinks[msg].clear()
-                                    MsgBlockLinks[msg].add(e)
-                                    MsgSendGap[msg][0] = s
-                                elif s == MsgSendGap[msg][0]:
-                                    #当e上发生的拥塞消息数量等于msg本身的最多拥塞数量时
-                                    MsgBlockLinks[msg].add(e)
-                    elif pack.PSN == msg.size:
-                        #msg末尾包通过e
-                        LinkMsgPassing[e].remove(msg)
-                        for OtherMsg in LinkMsgPassing[e]:
-                            if e in MsgBlockLinks[OtherMsg]:
-                                MsgBlockLinks[OtherMsg].remove(e)
-                                if len(MsgBlockLinks[OtherMsg]) == 0:
-                                    UnUpdatedMsgs.add(OtherMsg)
+                # msg =e.curPacket.Msg
+                # pack = e.curPacket
+                # if not( pack.PSN == 1 and pack.PSN == msg.size):
+                #     #只处理消息大小大于1的消息才会出发流量控制
+                #     if pack.PSN == 1:
+                #         #msg首个包进入该链路
+                #         LinkMsgPassing[e].add(msg)
+                #         s = len(LinkMsgPassing[e])
+                #         #阻塞数量小于等于1没有触发端到端的拥塞控制的必要
+                #         if s > 1:
+                #             for msg in LinkMsgPassing[e]:
+                #                 if s > MsgSendGap[msg][0]:
+                #                     #当e上发生的拥塞数量大于消息msg的最多的拥塞数量时
+                #                     MsgBlockLinks[msg].clear()
+                #                     MsgBlockLinks[msg].add(e)
+                #                     MsgSendGap[msg][0] = s
+                #                 elif s == MsgSendGap[msg][0]:
+                #                     #当e上发生的拥塞消息数量等于msg本身的最多拥塞数量时
+                #                     MsgBlockLinks[msg].add(e)
+                #     elif pack.PSN == msg.size:
+                #         #msg末尾包通过e
+                #         LinkMsgPassing[e].remove(msg)
+                #         for OtherMsg in LinkMsgPassing[e]:
+                #             if e in MsgBlockLinks[OtherMsg]:
+                #                 MsgBlockLinks[OtherMsg].remove(e)
+                #                 if len(MsgBlockLinks[OtherMsg]) == 0:
+                #                     UnUpdatedMsgs.add(OtherMsg)
                                 
 
                 #print(e.curPacket.Msg.sendedsize)
@@ -100,9 +100,9 @@ def latency_bandwith_congestion_estimate(G, MsgD):
     MsgBlockLinks = {}
     MsgCounter = len(MsgD)
     for key,data in MsgD.items():
-        #第一个1为gap，第二个0为计数c,第三个数为sentsize
+        #第一个1为gap，第二个0为计数c,第三个数为sentsize,第四个数为发送区域x x<gap
         #当gap == c的时候，消息便可以传输
-        MsgSendGap[data["Msg"]] = [1,0,0]
+        MsgSendGap[data["Msg"]] = [1,0,0,0]
         MsgBlockLinks[data["Msg"]] = set()
         #先初始化msg
         Rout = G.MsgRout[data["Msg"].Start.Iph_I][data["Msg"].End.Iph_I]
@@ -146,7 +146,8 @@ def latency_bandwith_congestion_estimate(G, MsgD):
     all_time = 0.0
     while MsgCounter > 0:
         #print("time step")
-        UnUpdatedMsgs = set()
+        #UnUpdatedMsgs = set()
+        update_msg_bandwith(G,MsgSendGap,LinkMsgPassing,EdgeUpdateOrder)
         IphTag = True
         #更新一个时间步
         all_time += 1
@@ -156,11 +157,9 @@ def latency_bandwith_congestion_estimate(G, MsgD):
                # print("Input edge")
                 if IphTag:
                     IphTag = False
-                    for msg in UnUpdatedMsgs:
-                        update_msg_congestion_information(msg,G,MsgSendGap,MsgBlockLinks,LinkMsgPassing,StartEdgeMsgs)
-                update_start(e,G,CongestionTag,MsgSendGap,UnUpdatedMsgs,StartEdgeMsgs) 
+                update_start(e,G,CongestionTag,MsgSendGap,StartEdgeMsgs) 
             else:
-                update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgSendGap,MsgBlockLinks,UnUpdatedMsgs)
+                update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks)
             pack = e.curPacket
             if pack.Msg != None and e.End.type == 2 and pack.PSN == pack.Msg.size:
                 MsgCounter -= 1
@@ -196,9 +195,33 @@ def update_msg_congestion_information(msg,G,MsgSendGap,MsgBlockLinks,LinkMsgPass
                 break
         MsgSendGap[msg][0] = max_congestion
 
-
-
-
-
+def get_most_congestion_edge(LinkMsgPassingCopy):
+    max_e  = None
+    band = 0
+    for e,data in LinkMsgPassingCopy.items():
+        if max_e == None or len(data) > max_e:
+            max_e = e
+            band = 1/(len(data))
+    #LinkMsgPassingCopy[e].clear()
+    #del LinkMsgPassingCopy[e]
+    return max_e,band
+def update_msg_bandwith(G,MsgSendGap,LinkMsgPassing,EdgeUpdateOrder):
+    print("test")
+    LinkMsgPassingCopy = copy.copy(LinkMsgPassing)
+    LinkBandwith = {}
+    for e,data in LinkMsgPassing:
+        LinkBandwith[e] = 1.0
+    MsgSet = set()
+    max_e = None
+    
+    #目的时计算每一条消息的有效带宽
+    while len(MsgSet) != MsgSendGap:
+        #先找到最拥塞的链路计算其中的消息的带宽
+        max_e,MinBand = get_most_congestion_edge(LinkMsgPassingCopy)
+        #设定每个消息的带宽MsgSendGap，同时更新MsgSet，已经设置过带宽的消息集合
+        
+        #更新LinkMsgPassingCopy[最拥塞的链路，每个消息通过的所有链路上]
+        #更新所有已经确定带宽的msg，通过的链路的剩余带宽LinkBandwith
+    
 
 
