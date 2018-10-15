@@ -333,7 +333,7 @@ def Init_random_Msgs(G,n):
 		b = int (random.randint(0,RecverCount-1))
 		A = G.InNode[a]
 		B = G.OutNode[b]
-		size = random.randint(1,10)
+		size = random.randint(1,2)
 		if (A.label + B.label) in Msg_Dicts:
 			Msg_Dicts[A.label + B.label]["Msg"].size += size
 			#print("hit")
@@ -395,13 +395,13 @@ def main(argv):
 	MsgD = None
 
 	#
-	if True:
+	if False:
 		MsgD = {}
 		with open(saveFile2+ ".json", 'r') as cFile:
 			MSgBackup = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
 	else:
-		MsgD = Init_random_Msgs(G,4)
+		MsgD = Init_random_Msgs(G,2600)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
 			json.dump(MSgBackup, ofile, sort_keys=True,indent=4, separators=(',', ': '))

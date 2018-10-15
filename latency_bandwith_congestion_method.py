@@ -30,8 +30,8 @@ def update_start(e,G,CongestionTag,MsgSendGap,StartEdgeMsgs,LinkMsgPassing):
     return e.curPacket
 def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks):
     #print("link update")
-    a = "node" + "30"
-    b = "node" + "4"
+    a = "node" + "30sss"
+    b = "node" + "4sss"
     if CongestionTag[e]:
         CongestionTag[e] = False
 
@@ -45,7 +45,7 @@ def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks):
 
     tag = True
     backup = RoundRobinIndex[e] 
-    for i in range(1,len(e.InEdges)+1):
+    for i in range(0,len(e.InEdges)):
         index = (i + RoundRobinIndex[e])%len(e.InEdges)
         if e.InEdges[index].curPacket.nextlink(G) == e:
             #index边有消息包，并且其下一条链路是e
@@ -95,7 +95,7 @@ def update(e,G,RoundRobinIndex,CongestionTag,LinkMsgPassing,MsgBlockLinks):
                 CongestionTag[e.InEdges[index]]= True
                 #e.InEdges[index].Congestion = True
             #insert_edge_to_queue(e.InEdges[index],Q,S,NodeMap)
-    RoundRobinIndex[e] = backup
+    #RoundRobinIndex[e] = backup
     if tag and e.label == a+"--"+b:
         print("gap")
     return e.curPacket
