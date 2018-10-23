@@ -401,7 +401,7 @@ def main(argv):
 			MSgBackup = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
 	else:
-		MsgD = Init_random_Msgs(G,2600)
+		MsgD = Init_random_Msgs(G,3000)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
 			json.dump(MSgBackup, ofile, sort_keys=True,indent=4, separators=(',', ': '))
