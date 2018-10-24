@@ -371,7 +371,7 @@ def Init_random_Msgs(G,n):
 
 	for key,data in Msg_Dicts.items():
 		
-		Msg_List.append([data["Msg"].size,data["start"].Lid,data["end"].Lid])
+		Msg_List.append([count,data["Msg"].size,data["start"].Lid,data["end"].Lid])
 		data["Msg"].Gid = count
 		count+=1
 
@@ -471,6 +471,6 @@ def main(argv):
 	# 	print("Msg:%s  (LBCmethod - Bmethod)/Bmethod:%f  size = %d"%(x.label,(MsgFinishDict1[x] - time)/time,size))
 
 	print("\n开始新的端到端的拥塞延迟带宽计算")
-	NLBCmethod.NewLBC_Estimate(G,MsgD2)
+	NLBCmethod.NewLBC_Estimate(G,Msg_List)
 if __name__ == "__main__":
     main(sys.argv)
