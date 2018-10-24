@@ -11,10 +11,12 @@ def NewLBC_Estimate(G, Msg_List):
     #局部数据初始化
     MsgNum = len(Msg_List)
     FinishedMsgNum = 0
+
     RoundRobinIndex = []
     InputbuffsQ = Init_queue(G,RoundRobinIndex)  
     OutPacketBuf = InitOutPacketBuf(G)
-
+    MessageBandwidth = [0.0]*4
+    SendedPacketNum = [0]*len(Msg_List)
 
 
 #初始化队列

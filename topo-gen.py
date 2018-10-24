@@ -226,6 +226,7 @@ def main(argv):
                         "source_interface": "interface1",
                         "destination_id": "node" + str(nearest[i][0]),
                         "destination_interface": "interface1",
+                        "bandwidth":random.randint(1,10),
                         "channel_id": "channel" + str(random.randint(
                             1, channels))})
 
@@ -234,6 +235,7 @@ def main(argv):
                         "source_interface": "interface1",
                         "destination_id": "node" + str(r),
                         "destination_interface": "interface1",
+                        "bandwidth":random.randint(1,10),
                         "channel_id": "channel" + str(random.randint(
                             1, channels))})
                     routersConnections.append(tmp)
@@ -300,6 +302,7 @@ def main(argv):
                     "source_interface": "interface1",
                     "destination_id": "node" + str(nearest[t][0]),
                     "destination_interface": "interface1",
+                    "bandwidth":random.randint(1,10),
                     "channel_id": "channel" + str(random.randint(
                         1, channels))})
                 connections.append([nearest[t][0], c])
@@ -342,6 +345,7 @@ def main(argv):
                     "source_interface": "interface1",
                     "destination_id": "node" + str(p),
                     "destination_interface": "interface1",
+                    "bandwidth":random.randint(1,10),
                     "channel_id": "channel" + str(random.randint(
                         1, channels))})
                 connections.append([nearest[t][0], p])

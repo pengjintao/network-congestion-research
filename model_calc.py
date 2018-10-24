@@ -64,6 +64,7 @@ class Graph:
 		count = 0
 		for x in Input["connections"]:
 			temp = Edge()
+			temp.bandwidth =x["bandwidth"]
 			temp.Iph_I = count
 			count+=1
 			temp.label = x["source_id"] +"--" + x["destination_id"]
@@ -181,7 +182,7 @@ class Edge:
 		self.OutEdges = [] #check
 		self.Start = None   #check
 		self.End = None     #check
-		self.bandwidth = 1
+		self.bandwidth = 0.0
 		self.roundRobin = 0
 		self.curPacket = packet()
 		self.Congestion = False
@@ -353,7 +354,7 @@ def Init_random_Msgs(G,n):
 		b = int (random.randint(0,RecverCount-1))
 		A = G.InNode[a]
 		B = G.OutNode[b]
-		size = random.randint(1,2)
+		size = random.randint(10,100)
 		if (A.label + B.label) in Msg_Dicts:
 			Msg_Dicts[A.label + B.label]["Msg"].size += size
 			#print("hit")
@@ -420,7 +421,7 @@ def main(argv):
 	MsgD = None
 	Msg_List = None
 	#
-	if True:
+	if False:
 		MsgD = {}
 		Msg_List = []
 		with open(saveFile2+ ".json", 'r') as cFile:
