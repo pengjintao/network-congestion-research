@@ -13,6 +13,7 @@ import numpy as np
 import pure_bandwith_method as BMethod
 import latency_bandwith_method as LBMethod
 import latency_bandwith_congestion_method as LBCMethod
+import NewLBCmethod as NLBCmethod
 
 class Graph:
 	def __init__(self,configFile):
@@ -34,6 +35,7 @@ class Graph:
 			temp.type = 0;
 			self.InNode.append(temp)
 			temp.Iph_I = count;
+			temp.Lid = count
 			count += 1;
 			self.NodeMap[x["node_id"]] = temp
 		count = 0
@@ -42,6 +44,7 @@ class Graph:
 			temp.label = x["node_id"]
 			temp.type = 2;
 			self.OutNode.append(temp)
+			temp.Lid = count
 			temp.Iph_I = count;
 			count += 1;
 			self.NodeMap[x["node_id"]] = temp
@@ -52,6 +55,7 @@ class Graph:
 			temp.label = x["node_id"]
 			temp.type = 1;
 			temp.Iph_I = count;
+			temp.Lid = count
 			count += 1;
 			self.RouterNode.append(temp)
 			self.NodeMap[x["node_id"]] = temp
@@ -84,7 +88,17 @@ class Graph:
 					p.OutEdges.append(q)
 					q.InEdges.append(p)
 
+		#初始化Edge在每个路由器上Lid
 
+		for node in self.RouterNode:
+			count = 0
+			for e in node.OutEdges:
+				e.SourceLid = count
+				count+=1
+			count = 0
+			for e in node.InEdges:
+				e.EndLid = count
+				count+=1
 		#init MsgRout space
 		for x in self.InNode:
 			a = []
@@ -172,10 +186,13 @@ class Edge:
 		self.curPacket = packet()
 		self.Congestion = False
 		self.prev = None # used for shortest path generator
+		self.SourceLid = int()
+		self.EndLid = int()
 class Node:
 	def __init__(self):
 		#0(start node) 1 (Router) 2 (recv node)
 		self.label = ""
+		self.Lid = int()
 		self.type = 0  #check
 		self.InEdges = [] #check
 		self.OutEdges = [] #checks
@@ -195,7 +212,7 @@ class MsgChan:
 			for i in range(0,self.msgNum):
 				if abs(MsgSendGap[self.nextMsg.msg][1]) < 0.00001:
     					MsgSendGap[self.nextMsg.msg][1] = 0.0
-				if MsgSendGap[self.nextMsg.msg][3]:	
+				if MsgSendGap[self.nextMsg.msg][3]:
 					MsgSendGap[self.nextMsg.msg][3] = False
 					pack = packet()
 					pack.Msg = self.nextMsg.msg
@@ -299,6 +316,7 @@ class MsgChan:
 class Msg:
 	def __init__(self):
 		self.size = 0
+		self.Gid = int()
 		self.sendedsize = 0
 		self.Start = None
 		self.End = None
@@ -324,8 +342,10 @@ class packet:
 		self.step = 0
 def Init_random_Msgs(G,n):
 	Msg_Dicts = {}
+	Msg_List = []
 	SenderCount = len(G.InNode);
 	RecverCount = len(G.OutNode);
+	count = 0
 	for x in G.InNode:
 		x.Msgs.nextMsg = None
 	for i in range(0,n):
@@ -348,8 +368,14 @@ def Init_random_Msgs(G,n):
 			Msg_Dicts[A.label + B.label]["Msg"] = temp
 			Msg_Dicts[A.label + B.label]["start"] = A
 			Msg_Dicts[A.label + B.label]["end"] = B
-			#A.Msgs.insert(temp)
-	return Msg_Dicts
+
+	for key,data in Msg_Dicts.items():
+		
+		Msg_List.append([data["Msg"].size,data["start"].Lid,data["end"].Lid])
+		data["Msg"].Gid = count
+		count+=1
+
+	return Msg_Dicts,Msg_List
 def print_Msg_Diects(G,Msg_Dicts):
 	for key,data in Msg_Dicts.items():
 		print ("Msg:%s size:%d"%(key,data["Msg"].size))
@@ -386,25 +412,26 @@ def main(argv):
 	print("calculation start")
 	configFile = "test_1.json"
 	saveFile2 = "save_Msg"
-
 	#图的初始化
 	G = Graph(configFile)
 	#G.print_graph_MsgRout_table()
     #生成40条随机消息
 	MSgBackup = []
 	MsgD = None
-
+	Msg_List = None
 	#
-	if False:
+	if True:
 		MsgD = {}
+		Msg_List = []
 		with open(saveFile2+ ".json", 'r') as cFile:
-			MSgBackup = json.load(cFile)
+			[MSgBackup,Msg_List] = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
 	else:
-		MsgD = Init_random_Msgs(G,3000)
+		MsgD,Msg_List = Init_random_Msgs(G,4)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
-			json.dump(MSgBackup, ofile, sort_keys=True,indent=4, separators=(',', ': '))
+			json.dump([MSgBackup,Msg_List], ofile, sort_keys=True,indent=4, separators=(',', ': '))
+			#json.dump(Msg_List, ofile, sort_keys=True,indent=4, separators=(',', ': '))
 
 	MsgD1 = copy.copy(MsgD)
 	MsgD2 = copy.copy(MsgD)
@@ -437,10 +464,13 @@ def main(argv):
 
 	#LBMethod.latency_bandwith_estimate(G,MsgD2)
 
-	print("\n开始端到端的拥塞延迟带宽计算")
-	time1,MsgFinishDict1 = LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
+	# print("\n开始端到端的拥塞延迟带宽计算")
+	# time1,MsgFinishDict1 = LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
 
-	for x,time,size in T:
-		print("Msg:%s  (LBCmethod - Bmethod)/Bmethod:%f  size = %d"%(x.label,(MsgFinishDict1[x] - time)/time,size))
+	# for x,time,size in T:
+	# 	print("Msg:%s  (LBCmethod - Bmethod)/Bmethod:%f  size = %d"%(x.label,(MsgFinishDict1[x] - time)/time,size))
+
+	print("\n开始新的端到端的拥塞延迟带宽计算")
+	NLBCmethod.NewLBC_Estimate(G,MsgD2)
 if __name__ == "__main__":
     main(sys.argv)
