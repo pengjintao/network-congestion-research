@@ -23,6 +23,7 @@ class Graph:
 		self.OutNode = []
 		self.RouterNode = []
 		self.MsgRout = []
+		self.MsgRout2 = []
 		with open(configFile,'r') as cFile:
 			Input = json.load(cFile)
 		self.NodeMap = {}
@@ -103,10 +104,14 @@ class Graph:
 		#init MsgRout space
 		for x in self.InNode:
 			a = []
+			b = []
 			for y in self.OutNode:
 				temp = []
+				temp1 = []
 				a.append(temp)
+				b.append(temp1)
 			self.MsgRout.append(a)
+			self.MsgRout2.append(b)
 		print(len(self.MsgRout))
 		print(len(self.MsgRout[3]))
 		self.MsgRout[3][0].append(1)
@@ -118,6 +123,15 @@ class Graph:
 		for Ipt in self.InNode:
 			for Opt in self.OutNode:
 				self.FindShortestPath(Ipt,Opt);
+		#初始化 记录这link GID的路由表
+
+		for Ipt in self.InNode:
+			for Opt in self.OutNode:
+				for link in self.MsgRout[Ipt.Iph_I][Opt.Iph_I]:
+					self.MsgRout2[Ipt.Iph_I][Opt.Iph_I].append(link.Iph_I)
+	
+	
+	
 	def FindShortestPath(self,SendNode,RecvNode):
 		S = set()
 		#print("find shortest path");

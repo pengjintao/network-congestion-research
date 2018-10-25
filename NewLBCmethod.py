@@ -3,6 +3,8 @@ import model_calc as MC
 import queue
 import copy
 
+
+#[MsgGId,MsgSize,MessageStartNode.Lid,MessageEndNode.Lid]
 def NewLBC_Estimate(G, Msg_List):
     print("Lets start")
     #算法要求离线计算，并且具有足够的速度
@@ -12,21 +14,28 @@ def NewLBC_Estimate(G, Msg_List):
     MsgNum = len(Msg_List)
     FinishedMsgNum = 0
 
-    RoundRobinIndex = []
-    InputbuffsQ = Init_queue(G,RoundRobinIndex)  
-    OutPacketBuf = InitOutPacketBuf(G)
-    MessageBandwidth = [0.0]*4
-    SendedPacketNum = [0]*len(Msg_List)
+    EdgeRoundRobinIndex = [0]*len(G.Edges)
+    RouterInputbuffsQ = Init_queue(G)  
+    EdgeInputQ = InitOutPacketBuf(G)
 
+    MsgBandwidth = [0.0]*len(Msg_List)
+    MsgTimeCounter = [0.0]*len(Msg_List)
+    MsgSendReady = [0,0]*len(Msg_List)#ready packet number ,PSN
+    MsgSendedNum = [0]*len(Msg_List)
+
+    NodeStartEdgeMsg = InitStartNodeEdge(G,Msg_List)
+    
+    #初始化每条边上通过的消息集合
+    LinkEdges = {}
+    for l in G.Edges:
+        LinkEdges[l] = set()            
 
 #初始化队列
-def Init_queue(G,RoundRobinIndex)  :
+def Init_queue(G)  :
     InputbuffsQ = []
     for r in G.RouterNode:
         temp = []
-        temp1 = []
         for oe in r.OutEdges:
-            temp1.append(0)
             t = []
             for ie in r.InEdges:
                 q = queue.Queue()
@@ -35,7 +44,6 @@ def Init_queue(G,RoundRobinIndex)  :
                 t.append(q)
             temp.append(t)
         InputbuffsQ.append(temp)
-        RoundRobinIndex.append(temp1)
             #print(InputbuffsQ[r.Lid][oe.SourceLid][ie.EndLid].get())
     # for r in G.RouterNode:
     #     for oe in r.OutEdges:
@@ -47,8 +55,32 @@ def Init_queue(G,RoundRobinIndex)  :
 
 #初始化每条边的开始端口上的buf
 def  InitOutPacketBuf(G):
-    OutPacketBuf = []
+    OutPacketQBuf = []
     for i in range(0,len(G.Edges)):
-        OutPacketBuf.append(MC.packet())
+        OutPacketQBuf.append(queue.Queue())
     # print("packet len %d  Edge Num %d "%(len(OutPacketBuf),len(G.Edges)))
-    return OutPacketBuf
+    return OutPacketQBuf
+
+
+#对于每一个开始边，都要关联一个消息数组，和一个发送队列保存从其边上发送的消息。
+def InitStartNodeEdge(G,Msg_List):
+    #消息数组
+    StartEdgeMessages = []
+    for node in G.InNode:
+        temp = []
+        for outEdge in node.OutEdges:
+            temp.append([])
+        StartEdgeMessages.append(temp)
+    for msg_A in Msg_List:
+        msgId = msg_A[0]
+        startNLid = msg_A[2]
+        endNLid = msg_A[3]
+        e = G.MsgRout[startNLid][endNLid][0]
+        StartEdgeMessages[e.Start.Lid][e.SourceLid].append(msgId)
+    # for node in G.InNode:
+    #     print("Node id = %s:"%(node.label))
+    #     for e in node.OutEdges:
+    #         print("      edge:%s"%(e.label))
+    #         for msgId in StartEdgeMessages[e.Start.Lid][e.SourceLid]:
+    #             print("      msg:%s"%(G.OutNode[Msg_List[msgId][3]].label))
+    return StartEdgeMessages    
