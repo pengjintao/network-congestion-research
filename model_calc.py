@@ -129,9 +129,9 @@ class Graph:
 			for Opt in self.OutNode:
 				for link in self.MsgRout[Ipt.Iph_I][Opt.Iph_I]:
 					self.MsgRout2[Ipt.Iph_I][Opt.Iph_I].append(link.Iph_I)
-	
-	
-	
+
+
+
 	def FindShortestPath(self,SendNode,RecvNode):
 		S = set()
 		#print("find shortest path");
@@ -385,7 +385,7 @@ def Init_random_Msgs(G,n):
 			Msg_Dicts[A.label + B.label]["end"] = B
 
 	for key,data in Msg_Dicts.items():
-		
+
 		Msg_List.append([count,data["Msg"].size,data["start"].Lid,data["end"].Lid])
 		data["Msg"].Gid = count
 		count+=1
@@ -396,6 +396,7 @@ def print_Msg_Diects(G,Msg_Dicts):
 		print ("Msg:%s size:%d"%(key,data["Msg"].size))
 		for l in G.MsgRout[data["start"].Iph_I][data["end"].Iph_I]:
 			print(l.label,end = ' ')
+			print("l.bandwidth = %d"%l.bandwidth,end = '      ')
 		print("")
 def add_msg_to_Node(MsgD,G):
 	for x in G.InNode:
@@ -435,14 +436,14 @@ def main(argv):
 	MsgD = None
 	Msg_List = None
 	#
-	if False:
+	if True:
 		MsgD = {}
 		Msg_List = []
 		with open(saveFile2+ ".json", 'r') as cFile:
 			[MSgBackup,Msg_List] = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
 	else:
-		MsgD,Msg_List = Init_random_Msgs(G,4)
+		MsgD,Msg_List = Init_random_Msgs(G,2)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
 			json.dump([MSgBackup,Msg_List], ofile, sort_keys=True,indent=4, separators=(',', ': '))
