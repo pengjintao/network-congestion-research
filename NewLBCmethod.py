@@ -44,6 +44,7 @@ def NewLBC_Estimate(G, Msg_List):
     #开始计算
     while FinishedMsgNum != MsgNum:
         time += 1
+        print("time = %d"%(time))
         #第一步：根据消息的带宽，向网络中注入流量
         for InNode in G.InNode:
             for OutEdge in InNode.OutEdges:
@@ -54,9 +55,9 @@ def NewLBC_Estimate(G, Msg_List):
                     temp = MsgTimeCounter[msgGid] + float(MsgBandwidth[msgGid])
                     remain_size = Msg_List[msgGid][1] - MsgSendedNum[msgGid]
                     max_send = math.floor(temp)
-                    if msgGid == 0:
-                        print(max_send)
+                    
                     real_send = min(remain_size,max_send)
+                    
                     MsgSendedNum[msgGid] += real_send
                     # if real_send != 0:
                     #     print("check %d"%(real_send))
@@ -79,13 +80,15 @@ def NewLBC_Estimate(G, Msg_List):
                 EdgeGid = e.Iph_I
                 EdgeLid = e.SourceLid
                 size = len(NodeStartEdgeMsg[e.Start.Lid][EdgeLid])
-                for i in (0,e.bandwidth):
+                for i in range(0,e.bandwidth+1):
                     #抽取bandwidth个数据包
                     index = EdgeRoundRobinIndex[EdgeGid]
                     # t = 0
                     for t in range(0,size):
+                       # print("check %d %d"%(i,e.bandwidth))
                         p = (index + t)% size
                         MsgGid = NodeStartEdgeMsg[e.Start.Lid][EdgeLid][p]
+                        #print("MsgSendReady[MsgGid][0] = %d"%(MsgSendReady[MsgGid][0]))
                         if MsgSendReady[MsgGid][0] > 0:
                           #  print("....MsgGid = %d  packet out %d = %d %s "%(MsgGid,MsgSendReady[MsgGid][1],Msg_List[MsgGid][1],e.label))
                             EdgeInputQ[EdgeGid].put(packet(MsgGid,MsgSendReady[MsgGid][1]))
@@ -110,7 +113,7 @@ def NewLBC_Estimate(G, Msg_List):
                 RouterLid = e.Start.Lid
                 size = len(RouterInputbuffsQ[RouterLid][EdgeLid])
                 #pack  = packet()
-                for i in (0,e.bandwidth):
+                for i in range(0,e.bandwidth):
                     index = EdgeRoundRobinIndex[EdgeGid]
                     for t in range(0,size):
                         p = (index + t)% size
@@ -130,6 +133,7 @@ def NewLBC_Estimate(G, Msg_List):
                 #print("末端为路由器")
                 EdgeGid = e.Iph_I
                 while not EdgeInputQ[EdgeGid].empty():
+                    print("check")
                     pack = EdgeInputQ[EdgeGid].get()
                     pack.step += 1
                     MsgGid = pack.MsgGid
