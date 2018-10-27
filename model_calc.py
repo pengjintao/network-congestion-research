@@ -63,12 +63,18 @@ class Graph:
 
 		#开始初始化Edge
 		count = 0
+		tempM = set()
 		for x in Input["connections"]:
+			label = x["source_id"] +"--" + x["destination_id"]
+			if label in tempM:
+				continue
+			else:
+				tempM.add(label)
 			temp = Edge()
 			temp.bandwidth =x["bandwidth"]
 			temp.Iph_I = count
 			count+=1
-			temp.label = x["source_id"] +"--" + x["destination_id"]
+			temp.label = label
 			temp.Start = self.NodeMap[x["source_id"]]
 			temp.Start.OutEdges.append(temp)
 			temp.End = self.NodeMap[x["destination_id"]]
@@ -368,7 +374,7 @@ def Init_random_Msgs(G,n):
 		b = int (random.randint(0,RecverCount-1))
 		A = G.InNode[a]
 		B = G.OutNode[b]
-		size = random.randint(10,100)
+		size = random.randint(1,5)
 		if (A.label + B.label) in Msg_Dicts:
 			Msg_Dicts[A.label + B.label]["Msg"].size += size
 			#print("hit")
@@ -423,6 +429,13 @@ def msgBackup_to_msgd(MSgBackup,MsgD,G):
 def msgd_to_msgBackup(MsgD,MSgBackup,G):
 	for x,data in MsgD.items():
 		MSgBackup.append ([data["start"].label,data["end"].label,data["Msg"].size])
+	
+def extend_Msg(MsgD,Msg_List,a):
+	for x in Msg_List:
+		x[1] = a*x[1]
+	for x,data in MsgD.items():
+		data["Msg"].size = a*data["Msg"].size
+
 
 def main(argv):
 	print("calculation start")
@@ -436,14 +449,15 @@ def main(argv):
 	MsgD = None
 	Msg_List = None
 	#
-	if True:
+	if False:
 		MsgD = {}
 		Msg_List = []
 		with open(saveFile2+ ".json", 'r') as cFile:
 			[MSgBackup,Msg_List] = json.load(cFile)
 		msgBackup_to_msgd(MSgBackup,MsgD, G)
+		extend_Msg(MsgD,Msg_List,100)
 	else:
-		MsgD,Msg_List = Init_random_Msgs(G,2)
+		MsgD,Msg_List = Init_random_Msgs(G,1)
 		msgd_to_msgBackup(MsgD,MSgBackup ,G)
 		with open(saveFile2 + ".json", "w") as ofile:
 			json.dump([MSgBackup,Msg_List], ofile, sort_keys=True,indent=4, separators=(',', ': '))
@@ -483,10 +497,13 @@ def main(argv):
 	# print("\n开始端到端的拥塞延迟带宽计算")
 	# time1,MsgFinishDict1 = LBCMethod.latency_bandwith_congestion_estimate(G,MsgD2)
 
-	# for x,time,size in T:
-	# 	print("Msg:%s  (LBCmethod - Bmethod)/Bmethod:%f  size = %d"%(x.label,(MsgFinishDict1[x] - time)/time,size))
 
 	print("\n开始新的端到端的拥塞延迟带宽计算")
-	NLBCmethod.NewLBC_Estimate(G,Msg_List)
+	time1,FinishList,RouterInputbuffsQMaxSize = NLBCmethod.NewLBC_Estimate(G,Msg_List)
+	for i in range(0,len(Msg_List)):
+    		a = G.InNode[Msg_List[i][2]].label
+    		print("Msg:%s->%s size = %d finish:%d"%(a,G.OutNode[Msg_List[i][3]].label,Msg_List[i][1],FinishList[i]))
+	print("RouterInputbuffsQMaxSize = %d"%(RouterInputbuffsQMaxSize))
+	print("NLBCM - PBM / PBM = %f"%((time1 -time)/time))
 if __name__ == "__main__":
     main(sys.argv)

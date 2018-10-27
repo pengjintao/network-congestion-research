@@ -3,187 +3,58 @@ calculation start
 40
 1
 打印消息路由路径
-Msg:node55node116 size:2
-node55--node10 node10--node13 node13--node116 
-Msg:node41node95 size:2
-node41--node8 node8--node4 node4--node36 node36--node95 
-Msg:node57node97 size:2
-node57--node38 node38--node1 node1--node22 node22--node25 node25--node11 node11--node3 node3--node17 node17--node97 
-Msg:node75node115 size:2
-node75--node27 node27--node39 node39--node115 
+Msg:node60node95 size:713
+node60--node9 l.bandwidth = 3      node9--node2 l.bandwidth = 7      node2--node6 l.bandwidth = 3      node6--node32 l.bandwidth = 4      node32--node95 l.bandwidth = 7      
+Msg:node44node84 size:813
+node44--node33 l.bandwidth = 7      node33--node40 l.bandwidth = 8      node40--node12 l.bandwidth = 2      node12--node2 l.bandwidth = 6      node2--node25 l.bandwidth = 8      node25--node84 l.bandwidth = 6      
+Msg:node68node102 size:787
+node68--node3 l.bandwidth = 9      node3--node2 l.bandwidth = 10      node2--node6 l.bandwidth = 3      node6--node27 l.bandwidth = 8      node27--node102 l.bandwidth = 1      
+Msg:node76node95 size:537
+node76--node11 l.bandwidth = 4      node11--node19 l.bandwidth = 7      node19--node32 l.bandwidth = 8      node32--node95 l.bandwidth = 7      
+Msg:node77node91 size:198
+node77--node25 l.bandwidth = 5      node25--node2 l.bandwidth = 9      node2--node6 l.bandwidth = 3      node6--node36 l.bandwidth = 6      node36--node11 l.bandwidth = 8      node11--node91 l.bandwidth = 7      
+Msg:node66node91 size:382
+node66--node16 l.bandwidth = 5      node16--node15 l.bandwidth = 1      node15--node11 l.bandwidth = 7      node11--node91 l.bandwidth = 7      
+Msg:node52node120 size:440
+node52--node32 l.bandwidth = 5      node32--node6 l.bandwidth = 5      node6--node12 l.bandwidth = 4      node12--node40 l.bandwidth = 7      node40--node17 l.bandwidth = 4      node17--node120 l.bandwidth = 3      
+Msg:node48node113 size:178
+node48--node17 l.bandwidth = 7      node17--node40 l.bandwidth = 4      node40--node12 l.bandwidth = 2      node12--node6 l.bandwidth = 7      node6--node27 l.bandwidth = 8      node27--node113 l.bandwidth = 2      
+Msg:node62node88 size:459
+node62--node26 l.bandwidth = 8      node26--node12 l.bandwidth = 3      node12--node40 l.bandwidth = 7      node40--node33 l.bandwidth = 1      node33--node88 l.bandwidth = 6      
+Msg:node71node118 size:886
+node71--node7 l.bandwidth = 6      node7--node15 l.bandwidth = 10      node15--node118 l.bandwidth = 7      
+Msg:node52node119 size:102
+node52--node32 l.bandwidth = 5      node32--node21 l.bandwidth = 3      node21--node11 l.bandwidth = 9      node11--node38 l.bandwidth = 6      node38--node119 l.bandwidth = 4      
+Msg:node71node117 size:922
+node71--node7 l.bandwidth = 6      node7--node22 l.bandwidth = 1      node22--node14 l.bandwidth = 9      node14--node33 l.bandwidth = 10      node33--node117 l.bandwidth = 4      
+Msg:node78node89 size:628
+node78--node39 l.bandwidth = 3      node39--node11 l.bandwidth = 4      node11--node15 l.bandwidth = 6      node15--node14 l.bandwidth = 2      node14--node33 l.bandwidth = 10      node33--node89 l.bandwidth = 5      
+Msg:node42node103 size:198
+node42--node38 l.bandwidth = 8      node38--node15 l.bandwidth = 1      node15--node14 l.bandwidth = 2      node14--node5 l.bandwidth = 3      node5--node31 l.bandwidth = 2      node31--node103 l.bandwidth = 3      
+Msg:node49node82 size:427
+node49--node22 l.bandwidth = 3      node22--node7 l.bandwidth = 5      node7--node82 l.bandwidth = 8      
+Msg:node69node83 size:120
+node69--node30 l.bandwidth = 3      node30--node6 l.bandwidth = 5      node6--node12 l.bandwidth = 4      node12--node40 l.bandwidth = 7      node40--node17 l.bandwidth = 4      node17--node31 l.bandwidth = 3      node31--node83 l.bandwidth = 10      
 
 
 开始纯带宽计算
-total time = 2.000000
-Msg:node55-node116  FinishTime:2.000000  size = 2
-Msg:node41-node95  FinishTime:2.000000  size = 2
-Msg:node57-node97  FinishTime:2.000000  size = 2
-Msg:node75-node115  FinishTime:2.000000  size = 2
+total time = 922.000000
+Msg:node52-node119  FinishTime:34.000000  size = 102
+Msg:node69-node83  FinishTime:60.000000  size = 120
+Msg:node76-node95  FinishTime:134.250000  size = 537
+Msg:node49-node82  FinishTime:142.333333  size = 427
+Msg:node52-node120  FinishTime:166.666667  size = 440
+Msg:node71-node118  FinishTime:177.200000  size = 886
+Msg:node48-node113  FinishTime:178.000000  size = 178
+Msg:node77-node91  FinishTime:198.000000  size = 198
+Msg:node42-node103  FinishTime:198.000000  size = 198
+Msg:node66-node91  FinishTime:382.000000  size = 382
+Msg:node78-node89  FinishTime:413.000000  size = 628
+Msg:node60-node95  FinishTime:455.500000  size = 713
+Msg:node62-node88  FinishTime:459.000000  size = 459
+Msg:node44-node84  FinishTime:495.500000  size = 813
+Msg:node68-node102  FinishTime:787.000000  size = 787
+Msg:node71-node117  FinishTime:922.000000  size = 922
 
 开始新的端到端的拥塞延迟带宽计算
 Lets start
-0 0 0
-0 0 1
-0 0 2
-0 0 3
-0 0 4
-0 0 5
-0 0 6
-0 0 7
-0 0 8
-0 0 9
-node38--node1 node1 node1--node34
-0 1 0
-0 1 1
-0 1 2
-0 1 3
-0 1 4
-0 1 5
-0 1 6
-0 1 7
-0 1 8
-0 1 9
-node38--node1 node1 node1--node35
-0 2 0
-0 2 1
-0 2 2
-0 2 3
-0 2 4
-0 2 5
-0 2 6
-0 2 7
-0 2 8
-0 2 9
-node38--node1 node1 node1--node7
-0 3 0
-0 3 1
-0 3 2
-0 3 3
-0 3 4
-0 3 5
-0 3 6
-0 3 7
-0 3 8
-0 3 9
-node38--node1 node1 node1--node38
-0 4 0
-0 4 1
-0 4 2
-0 4 3
-0 4 4
-0 4 5
-0 4 6
-0 4 7
-0 4 8
-0 4 9
-node38--node1 node1 node1--node22
-0 5 0
-0 5 1
-0 5 2
-0 5 3
-0 5 4
-0 5 5
-0 5 6
-0 5 7
-0 5 8
-0 5 9
-node38--node1 node1 node1--node19
-0 6 0
-0 6 1
-0 6 2
-0 6 3
-0 6 4
-0 6 5
-0 6 6
-0 6 7
-0 6 8
-0 6 9
-node38--node1 node1 node1--node22
-0 7 0
-0 7 1
-0 7 2
-0 7 3
-0 7 4
-0 7 5
-0 7 6
-0 7 7
-0 7 8
-0 7 9
-node38--node1 node1 node1--node34
-0 8 0
-0 8 1
-0 8 2
-0 8 3
-0 8 4
-0 8 5
-0 8 6
-0 8 7
-0 8 8
-0 8 9
-node38--node1 node1 node1--node35
-0 9 0
-0 9 1
-0 9 2
-0 9 3
-0 9 4
-0 9 5
-0 9 6
-0 9 7
-0 9 8
-0 9 9
-node38--node1 node1 node1--node38
-1 0 0
-1 0 1
-1 0 2
-1 0 3
-1 0 4
-1 0 5
-node19--node1 node1 node1--node34
-1 1 0
-1 1 1
-1 1 2
-1 1 3
-1 1 4
-1 1 5
-node19--node1 node1 node1--node35
-1 2 0
-1 2 1
-1 2 2
-1 2 3
-1 2 4
-1 2 5
-node19--node1 node1 node1--node7
-1 3 0
-1 3 1
-1 3 2
-1 3 3
-1 3 4
-1 3 5
-node19--node1 node1 node1--node38
-1 4 0
-1 4 1
-1 4 2
-1 4 3
-1 4 4
-1 4 5
-node19--node1 node1 node1--node22
-1 5 0
-1 5 1
-1 5 2
-1 5 3
-1 5 4
-1 5 5
-node19--node1 node1 node1--node19
-2 0 0
-2 0 1
-2 0 2
-2 0 3
-2 0 4
-2 0 5
-2 0 6
-2 0 7
-2 0 8
-2 0 9
-2 0 10
-2 0 11
-2 0 12

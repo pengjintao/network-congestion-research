@@ -23,7 +23,12 @@ def NewLBC_Estimate(G, Msg_List):
 
     EdgeRoundRobinIndex = [0]*len(G.Edges)
     RouterInputbuffsQ = Init_queue(G)
+    RouterInputbuffsQMaxSize = 0
     EdgeInputQ = InitOutPacketBuf(G)
+    EdgeCreditMax = 16
+    EdgeCredit = []
+    for e in G.Edges:
+        EdgeCredit.append(EdgeCreditMax)
 
     NodeStartEdgeMsg = InitStartNodeEdge(G,Msg_List)
 
@@ -35,16 +40,20 @@ def NewLBC_Estimate(G, Msg_List):
         MsgSendReady.append([0,1])
     MsgSendedNum = [0]*len(Msg_List)
 
-
     #初始化每条边上通过的消息集合
     LinkMsgs = {}
     for l in G.Edges:
         LinkMsgs[l] = set()
 
+
+    #测试用代码，用于保存每条边上通过的消息
+    EdgeCheck = {}
+    for e in G.Edges:
+        EdgeCheck[e.label] = []
     #开始计算
     while FinishedMsgNum != MsgNum:
         time += 1
-        print("time = %d"%(time))
+        #print("time = %d"%(time))
         #第一步：根据消息的带宽，向网络中注入流量
         for InNode in G.InNode:
             for OutEdge in InNode.OutEdges:
@@ -57,7 +66,7 @@ def NewLBC_Estimate(G, Msg_List):
                     max_send = math.floor(temp)
                     
                     real_send = min(remain_size,max_send)
-                    
+                    #print("read_send =%d "%real_send)
                     MsgSendedNum[msgGid] += real_send
                     # if real_send != 0:
                     #     print("check %d"%(real_send))
@@ -80,17 +89,24 @@ def NewLBC_Estimate(G, Msg_List):
                 EdgeGid = e.Iph_I
                 EdgeLid = e.SourceLid
                 size = len(NodeStartEdgeMsg[e.Start.Lid][EdgeLid])
-                for i in range(0,e.bandwidth+1):
+                #print(size)
+                for i in range(0,min(e.bandwidth,EdgeCredit[e.Iph_I])):
                     #抽取bandwidth个数据包
                     index = EdgeRoundRobinIndex[EdgeGid]
                     # t = 0
                     for t in range(0,size):
-                       # print("check %d %d"%(i,e.bandwidth))
+                        #print("check %d %d"%(i,e.bandwidth))
                         p = (index + t)% size
+                        #print(p)
                         MsgGid = NodeStartEdgeMsg[e.Start.Lid][EdgeLid][p]
                         #print("MsgSendReady[MsgGid][0] = %d"%(MsgSendReady[MsgGid][0]))
                         if MsgSendReady[MsgGid][0] > 0:
-                          #  print("....MsgGid = %d  packet out %d = %d %s "%(MsgGid,MsgSendReady[MsgGid][1],Msg_List[MsgGid][1],e.label))
+                            #print(G.InNode[Msg_List[MsgGid][2]].label + "  " + G.OutNode[Msg_List[MsgGid][3]].label)
+                            #print("....MsgGid = %d  packet out %d = %d %s "%(MsgGid,MsgSendReady[MsgGid][1],Msg_List[MsgGid][1],e.label))
+                            EdgeCredit[e.Iph_I] -= 1
+                            if EdgeCredit[e.Iph_I] < 0:# EdgeCreditMax:
+                                print("error warning0")
+                            
                             EdgeInputQ[EdgeGid].put(packet(MsgGid,MsgSendReady[MsgGid][1]))
                             if MsgSendReady[MsgGid][1] == 1:
                                 #first packet arrive edge e
@@ -113,12 +129,22 @@ def NewLBC_Estimate(G, Msg_List):
                 RouterLid = e.Start.Lid
                 size = len(RouterInputbuffsQ[RouterLid][EdgeLid])
                 #pack  = packet()
-                for i in range(0,e.bandwidth):
+                for i in range(0,min(e.bandwidth,EdgeCredit[e.Iph_I])):
                     index = EdgeRoundRobinIndex[EdgeGid]
                     for t in range(0,size):
                         p = (index + t)% size
                         if not RouterInputbuffsQ[RouterLid][EdgeLid][p].empty():
+                            if e.End.type != 2:
+                                EdgeCredit[e.Iph_I] -= 1
+                                if EdgeCredit[e.Iph_I] < 0:
+                                    print("error warning1")
+                            
+                            #if e.label == "node15--node18":
+                            #    print("check EdgeGid = %d"%(EdgeGid))
                             pack = RouterInputbuffsQ[RouterLid][EdgeLid][p].get()
+                            EdgeCredit[G.RouterNode[RouterLid].InEdges[p].Iph_I] += 1
+                            if  EdgeCredit[G.RouterNode[RouterLid].InEdges[p].Iph_I] > EdgeCreditMax:
+                                print("error warning2")
                             EdgeInputQ[EdgeGid].put(pack)
 #                            if pack.Psn == 1:
 #                                LinkMsgs[e].add(pack.MsgGid)
@@ -129,15 +155,24 @@ def NewLBC_Estimate(G, Msg_List):
                             break
         #第三步：更新每一条边
         for e in G.Edges:
+            EdgeTemp = []
+            EdgeGid = e.Iph_I
+            #if e.label == "node15--node18":
+            #    print("start check")
             if e.End.type == 1:
                 #print("末端为路由器")
-                EdgeGid = e.Iph_I
                 while not EdgeInputQ[EdgeGid].empty():
-                    print("check")
+                    #if e.label == "node15--node18":
+                    #    print("check")
+
+                   #EdgeCheck[e.label].append
                     pack = EdgeInputQ[EdgeGid].get()
                     pack.step += 1
                     MsgGid = pack.MsgGid
                     nextEdge = G.MsgRout[Msg_List[MsgGid][2]][Msg_List[MsgGid][3]][pack.step]
+
+                    
+                    EdgeTemp.append(G.InNode[Msg_List[MsgGid][2]].label + "  " + G.OutNode[Msg_List[MsgGid][3]].label)
                     #LinkMsgs
                     if pack.Psn == 1:
                         LinkMsgs[nextEdge].add(MsgGid)
@@ -145,26 +180,60 @@ def NewLBC_Estimate(G, Msg_List):
                         LinkMsgs[nextEdge].remove(MsgGid)
                     #RouterInputbuffsQ
                     RouterInputbuffsQ[e.End.Lid][nextEdge.SourceLid][e.EndLid].put(pack)
-
+                    if RouterInputbuffsQMaxSize < RouterInputbuffsQ[e.End.Lid][nextEdge.SourceLid][e.EndLid].qsize() :
+                        RouterInputbuffsQMaxSize = RouterInputbuffsQ[e.End.Lid][nextEdge.SourceLid][e.EndLid].qsize() 
                 #    print("c")
             elif e.End.type == 2:
                 #print("末端为接受节点")
-                EdgeGid = e.Iph_I
                 #if not EdgeInputQ[EdgeGid].empty():
                 #    print("check")
 
                 #EdgeInputQ[EdgeGid].queue.clear()
                 while not EdgeInputQ[EdgeGid].empty():
                     pack = EdgeInputQ[EdgeGid].get()
+                    EdgeTemp.append(G.InNode[Msg_List[MsgGid][2]].label + "  " + G.OutNode[Msg_List[MsgGid][3]].label)
                     if pack.Psn == Msg_List[pack.MsgGid][1]:
                         MsgFinishedList[pack.MsgGid] = time
                         FinishedMsgNum += 1
+               #         print(FinishedMsgNum)
+            EdgeCheck[e.label].append(EdgeTemp)
 
 
+
+    # print("all message finished at %d"%(time))
+    # msgs = EdgeCheck["node6--node2"]
+    # for i in range(0,len(msgs)):
+    #     print("time step %d"%(i+1))
+    #     for st in msgs[i]:
+    #         print("msg: %s"%(st))
+    #         # print time
+        
+        
         #第四步：更新每个消息的带宽
-
-    print("all message finished at %d"%(time))
-    return MsgFinishedList
+        LinkRemainBandwidth = []
+        for e in G.Edges:
+            LinkRemainBandwidth.append(e.bandwidth)
+        LinkMsgPassingCopy = copy.copy(LinkMsgs)
+        for l,data in LinkMsgs.items():
+            LinkMsgPassingCopy[l] = copy.copy(LinkMsgs[l])
+        e,minBandwidth = get_most_congestion_edge(LinkMsgPassingCopy,LinkRemainBandwidth)
+        
+      
+        #目的时计算每一条消息的有效带宽
+        while e != None:
+            p = copy.copy(LinkMsgPassingCopy[e])
+            for msgGid in p:
+                MsgBandwidth[msgGid] = minBandwidth
+                #print("msg:%s band:%f"%(MsgLabel(G,Msg_List,MsgGid),minBandwidth))
+                for l in G.MsgRout[Msg_List[msgGid][2]][Msg_List[msgGid][3]]:
+                    if l in LinkMsgPassingCopy and  msgGid in LinkMsgPassingCopy[l]:
+                        LinkMsgPassingCopy[l].remove(msgGid)
+                        LinkRemainBandwidth[l.Iph_I] -= minBandwidth
+                        if len(LinkMsgPassingCopy[l]) == 0:
+                            del LinkMsgPassingCopy[l]
+            e,minBandwidth = get_most_congestion_edge(LinkMsgPassingCopy,LinkRemainBandwidth)
+    #
+    return time,MsgFinishedList,RouterInputbuffsQMaxSize
 
 #初始化队列
 def Init_queue(G)  :
@@ -197,6 +266,21 @@ def  InitOutPacketBuf(G):
     # print("packet len %d  Edge Num %d "%(len(OutPacketBuf),len(G.Edges)))
     return OutPacketQBuf
 
+def get_most_congestion_edge(LinkMsgPassingCopy,LinkBandwith):
+    max_e  = None
+    band = 0.0
+    for e,data in LinkMsgPassingCopy.items():
+        if len(data) > 0:
+            if max_e == None or LinkBandwith[e.Iph_I]/len(data) < LinkBandwith[max_e.Iph_I]/len(LinkMsgPassingCopy[max_e]):
+                max_e = e
+    #LinkMsgPassingCopy[e].clear()
+    #del LinkMsgPassingCopy[e]
+    if max_e != None:
+        if len(LinkMsgPassingCopy[max_e]) != 0:
+            band =LinkBandwith[max_e.Iph_I]/(len(LinkMsgPassingCopy[max_e]))
+        else:
+            max_e = None
+    return max_e,band
 
 #对于每一个开始边，都要关联一个消息数组，和一个发送队列保存从其边上发送的消息。
 def InitStartNodeEdge(G,Msg_List):
@@ -230,3 +314,6 @@ def InitMsgStartBandwidth(Msg_List,NodeStartEdgeMsg,G):
         e = G.MsgRout[startNLid][endNLid][0]
         MsgBandwidth.append(e.bandwidth)
     return MsgBandwidth
+
+def MsgLabel(G,Msg_List,MsgGId):
+    return G.InNode[Msg_List[MsgGId][2]].label + "  " + G.OutNode[Msg_List[MsgGId][3]].label + "size = " + str(Msg_List[MsgGId][1])
